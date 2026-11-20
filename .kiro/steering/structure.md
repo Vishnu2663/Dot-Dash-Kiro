@@ -25,7 +25,7 @@ Defined once there; components use only these (enforced by `tests/ui-tokens.test
   - `focus`.
 - **Type scale:** `text-xs` … `text-6xl`. Patient screens use `text-lg` or larger for body text.
 - **Spacing:** `--spacing` 0.25rem. Steps 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12.
-- **Radius:** `rounded-control`, `rounded-tile`, `rounded-card`, `rounded-pill`.
+- **Radius:** `rounded-chip`, `rounded-control`, `rounded-tile`, `rounded-card`, `rounded-pill`.
 - **Shadow:** `shadow-card`, `shadow-raised`.
 - **Motion** (`:root`): `--duration-gauge` 90 ms, `--duration-fast` 150 ms, `--duration-base` 220 ms, `--duration-slow` 320 ms, `--stagger-step` 30 ms, `--ease-standard`.
 - **Motion classes:** `anim-enter`, `anim-symbol`, `anim-slide-in`, `anim-toast`, `anim-tile` (stagger by `--i`). Animate `transform` and `opacity` only.

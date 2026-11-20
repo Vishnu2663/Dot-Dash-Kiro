@@ -9,12 +9,12 @@ function Step({ n, title, done, children, action }: { n: number; title: string; 
   return (
     <li className="relative flex gap-4 sm:gap-5">
       <div className="flex flex-col items-center">
-        <span className={`grid size-11 shrink-0 place-items-center rounded-full text-xl font-bold ${done ? "bg-ok text-black" : "bg-white text-black"}`} aria-hidden="true">
+        <span className={`grid size-11 shrink-0 place-items-center rounded-pill text-xl font-bold ${done ? "bg-ok text-on-status" : "bg-inverse text-on-inverse"}`} aria-hidden="true">
           {done ? "✓" : n}
         </span>
         <span className="mt-2 w-px flex-1 bg-line" aria-hidden="true" />
       </div>
-      <div className="mb-6 flex-1 rounded-2xl border border-line bg-surface p-5 sm:p-6">
+      <div className="mb-6 flex-1 rounded-tile border border-line bg-surface p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-3">
           <h3 className="text-2xl font-bold">Step {n}: {title}</h3>
           {done && <Badge tone="ok">Done</Badge>}
@@ -28,10 +28,10 @@ function Step({ n, title, done, children, action }: { n: number; title: string; 
 
 function Fold({ title, open, children }: { title: string; open?: boolean; children: ReactNode }) {
   return (
-    <details open={open} className="group rounded-2xl border border-line bg-surface p-5 sm:p-6">
+    <details open={open} className="group rounded-tile border border-line bg-surface p-5 sm:p-6">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-xl font-bold">
         {title}
-        <span className="text-muted transition group-open:rotate-180" aria-hidden="true">▾</span>
+        <span className="text-muted transition-transform duration-150 ease-standard group-open:rotate-180" aria-hidden="true">▾</span>
       </summary>
       <div className="mt-3 space-y-2 text-lg text-muted">{children}</div>
     </details>
@@ -44,7 +44,7 @@ export function Home({ go, settings }: { go: (p: Page) => void; settings: Settin
 
   return (
     <div className="space-y-12">
-      <section className="rounded-3xl border border-line bg-gradient-to-br from-surface-2 to-black p-6 sm:p-10">
+      <section className="rounded-card border border-line bg-gradient-to-br from-surface-2 to-bg p-6 sm:p-10">
         <div className="flex flex-wrap gap-2">
           <Badge tone="ok"><span aria-hidden="true" className="grayscale">🔒</span> Video never leaves this device</Badge>
           <Badge>Free · only needs a webcam</Badge>
@@ -54,7 +54,7 @@ export function Home({ go, settings }: { go: (p: Page) => void; settings: Settin
           Spell messages with <B>eye blinks</B> as Morse code, or pick common needs in Easy mode with a single blink. Dot-Dash speaks for you and can alert a caregiver in an emergency.
         </p>
         {!cameraOk && (
-          <p className="mt-4 rounded-xl bg-danger/15 p-4 text-danger" role="alert">
+          <p className="mt-4 rounded-control bg-danger-tint p-4 text-danger" role="alert">
             This browser can't use the camera. Open Dot-Dash in Chrome on localhost or HTTPS.
           </p>
         )}
@@ -129,13 +129,13 @@ export function Home({ go, settings }: { go: (p: Page) => void; settings: Settin
       <section aria-labelledby="modes">
         <h2 id="modes" className="mb-4 text-3xl font-bold">Choose how to communicate</h2>
         <div className="grid gap-4 md:grid-cols-2">
-          <button onClick={() => go("easy")} className="group rounded-2xl border border-line bg-surface p-6 text-left transition hover:border-white hover:bg-surface-2">
+          <button onClick={() => go("easy")} className="group rounded-tile border-2 border-line-strong bg-surface p-6 text-left hover:border-inverse hover:bg-surface-2">
             <span className="text-4xl" aria-hidden="true">▦</span>
             <h3 className="mt-3 text-2xl font-bold">Easy mode</h3>
             <p className="mt-2 text-lg text-muted">A highlight moves across Water, Pain, Toilet, Turn me, Call nurse, Yes and No. Blink to choose. No Morse knowledge needed.</p>
             <p className="mt-4 font-semibold group-hover:underline">Open Easy mode →</p>
           </button>
-          <button onClick={() => go("talk")} className="group rounded-2xl border border-line bg-surface p-6 text-left transition hover:border-white hover:bg-surface-2">
+          <button onClick={() => go("talk")} className="group rounded-tile border-2 border-line-strong bg-surface p-6 text-left hover:border-inverse hover:bg-surface-2">
             <span className="font-mono text-4xl font-bold" aria-hidden="true">• —</span>
             <h3 className="mt-3 text-2xl font-bold">Morse mode</h3>
             <p className="mt-2 text-lg text-muted">Spell anything with blinks. Full-sentence suggestions that match your letters appear after 2 letters; blink a number to choose one.</p>

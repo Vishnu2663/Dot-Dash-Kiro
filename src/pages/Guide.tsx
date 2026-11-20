@@ -5,17 +5,17 @@ import type { Page } from "../App";
 
 const ZONES = [
   ["Under 0.4 s", "Ignored", "A natural blink. Nothing happens.", "bg-surface-2"],
-  ["0.4 – 1 s", "Dot  •", "A short, deliberate blink.", "bg-dot/60"],
-  ["1 – 3 s", "Dash  —", "Hold your eyes closed a little longer.", "bg-dash/60"],
-  ["Over 3 s", "SOS", "Sends an alert to your caregiver.", "bg-danger/60"],
+  ["0.4 – 1 s", "Dot  •", "A short, deliberate blink.", "bg-accent-zone-dot"],
+  ["1 – 3 s", "Dash  —", "Hold your eyes closed a little longer.", "bg-accent-zone-dash"],
+  ["Over 3 s", "SOS", "Sends an alert to your caregiver.", "bg-danger"],
 ];
 
 function CheatSheet() {
   const all = Object.entries(MORSE);
   const row = ([code, ch]: [string, string]) => (
-    <li key={ch} className="flex items-center justify-between gap-2 rounded-lg bg-surface-2 px-3 py-1.5">
+    <li key={ch} className="flex items-center justify-between gap-2 rounded-chip bg-surface-2 px-3 py-1.5">
       <b className="text-xl">{ch}</b>
-      <span className="font-mono text-lg tracking-widest text-brand">{pretty(code)}</span>
+      <span className="font-mono text-lg tracking-widest text-text">{pretty(code)}</span>
     </li>
   );
   return (
@@ -25,8 +25,8 @@ function CheatSheet() {
         <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{all.filter(([, v]) => /[A-Z]/.test(v)).map(row)}</ul>
         <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">{all.filter(([, v]) => /\d/.test(v)).map(row)}</ul>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-          <li className="flex items-center justify-between rounded-lg border border-line px-3 py-2"><b>Delete last letter</b><span className="font-mono text-lg tracking-widest text-accent">{pretty(DELETE_CODE)}</span></li>
-          <li className="flex items-center justify-between rounded-lg border border-line px-3 py-2"><b>Speak the sentence</b><span className="font-mono text-lg tracking-widest text-accent">{pretty(SPEAK_CODE)}</span></li>
+          <li className="flex items-center justify-between rounded-chip border border-line px-3 py-2"><b>Delete last letter</b><span className="font-mono text-lg tracking-widest text-accent">{pretty(DELETE_CODE)}</span></li>
+          <li className="flex items-center justify-between rounded-chip border border-line px-3 py-2"><b>Speak the sentence</b><span className="font-mono text-lg tracking-widest text-accent">{pretty(SPEAK_CODE)}</span></li>
         </ul>
       </details>
     </Card>
@@ -56,8 +56,8 @@ export function Guide({ go }: { go: (p: Page) => void }) {
         <p className="mt-2 text-lg text-muted">A blink is counted when you <B>open your eyes again</B>. The "Blink length" bar on screen shows what your blink will count as.</p>
         <ul className="mt-4 grid gap-3 sm:grid-cols-2">
           {ZONES.map(([range, name, desc, color]) => (
-            <li key={name} className="flex gap-4 rounded-xl border border-line p-4">
-              <span className={`mt-1 h-10 w-3 shrink-0 rounded-full ${color}`} aria-hidden="true" />
+            <li key={name} className="flex gap-4 rounded-control border border-line p-4">
+              <span className={`mt-1 h-10 w-3 shrink-0 rounded-pill border border-line-strong ${color}`} aria-hidden="true" />
               <div>
                 <p className="text-sm text-muted">{range}</p>
                 <p className="text-2xl font-bold">{name}</p>
@@ -77,7 +77,7 @@ export function Guide({ go }: { go: (p: Page) => void }) {
           <li>Made a mistake? Blink <B>• • — —</B> to delete the last letter.</li>
           <li>Ready to speak? Blink <B>• — • —</B>, or press Speak.</li>
         </ol>
-        <p className="mt-4 rounded-xl bg-surface-2 p-4 text-lg">
+        <p className="mt-4 rounded-control bg-surface-2 p-4 text-lg">
           <b>Tip:</b> a few common letters are quick: <b>E</b> = •, <b>T</b> = —, <b>I</b> = • •, <b>S</b> = • • •, <b>O</b> = — — —.
         </p>
       </Card>
@@ -87,7 +87,7 @@ export function Guide({ go }: { go: (p: Page) => void }) {
         <p className="mt-2 text-lg text-muted">For urgent needs, blink one simple pattern and it is spoken straight away. They are listed at the top of the Morse chart.</p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
           {QUICK_PHRASES.map((p) => (
-            <li key={p.id} className="flex items-center justify-between gap-3 rounded-xl border border-line px-4 py-3">
+            <li key={p.id} className="flex items-center justify-between gap-3 rounded-control border border-line px-4 py-3">
               <span><b className="text-xl">{p.label}</b><span className="block text-sm text-muted">{p.how}</span></span>
               <span className="font-mono text-xl font-bold tracking-widest">{pretty(p.code, "")}{p.open ? "…" : ""}</span>
             </li>
@@ -116,7 +116,7 @@ export function Guide({ go }: { go: (p: Page) => void }) {
         </p>
       </Card>
 
-      <Card className="border-danger/50">
+      <Card className="border-danger">
         <h2 className="text-2xl font-bold text-danger">6. Emergency alert</h2>
         <p className="mt-2 text-lg text-muted">
           Keep your eyes <B>closed for 3 seconds</B>, or spell <B>HELP</B>. Dot-Dash sends one alert to your caregiver's phone (and no more than one every 30 seconds). A caregiver must set the alert passcode in Settings first.

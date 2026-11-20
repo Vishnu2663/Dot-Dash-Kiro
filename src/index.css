@@ -59,6 +59,7 @@
   --spacing: 0.25rem;
 
   /* Radius */
+  --radius-chip: 0.5rem;
   --radius-control: 1rem;
   --radius-tile: 1.25rem;
   --radius-card: 1.5rem;
