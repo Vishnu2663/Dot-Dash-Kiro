@@ -50,7 +50,7 @@ The app works with no configuration: Easy mode, Morse mode, calibration and spok
 | `TELEGRAM_CHAT_ID` | The chat that receives alerts. If empty, the chat that last sent `/start` to the bot is used. | Optional |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares the caregiver question between two devices. Without them, one server instance holds it in memory. | Optional |
 | `GROQ_API_KEY` | Groq, tried first for sentence suggestions. | Optional. With neither AI key, built-in phrases are used. |
-| `GEMINI_API_KEY` | Google Gemini, tried only if Groq fails or returns nothing. | Optional |
+| `GEMINI_API_KEY` | Google Gemini, tried only if Groq is not configured, fails, or returns nothing usable. | Optional |
 | `GROQ_MODEL`, `GEMINI_MODEL` | Override the default model names. | Optional |
 
 To run the API locally, use `npx vercel dev`. To deploy, import the repo into Vercel and set the variables above.
@@ -75,6 +75,7 @@ Cloud AI is used for one thing: suggesting sentences that start with the letters
 **Labels.** Every suggestion tile says "AI" or "Built-in". The server marks AI sentences in its response, and the app never labels a sentence "AI" on its own.
 **Off switch.** Settings > "Use cloud AI for suggestions" (on by default). When off, the app sends no request to `/api/predict` and uses only built-in phrases. Unit tests check that no `fetch` happens when it is off, and that the request body holds only those four fields when it is on.
 **If they are down.** Groq is tried, then Gemini (6 s limit for each). If neither answers, a provider is not configured, or nothing usable arrives within 9 s, the app keeps the built-in phrases, which are shown instantly before any cloud answer, and shows the note "Using built-in suggestions for now." Every suggestion, from either source, must start with the typed letters, and nothing is chosen without a blink.
+**Spoken output.** Speech uses the browser's built-in speech synthesis, not Groq or Gemini. Depending on your browser and the voice you choose, spoken text may be processed by an online voice service. Choose an offline voice in your system settings if you want to avoid that.
 **Kiro.** Kiro was used to build this app. Kiro is not part of the running app. The specs, steering and hooks in `.kiro/` show how.
 
 ## How Kiro was used

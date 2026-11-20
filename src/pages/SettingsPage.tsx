@@ -116,6 +116,7 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
                 <li>When the camera starts, the browser downloads the face-tracking model from Google's storage servers. Nothing is uploaded with it.</li>
                 <li>Alerts and test messages go through this app's server to Telegram. The emergency alert text is fixed: "the patient needs help now".</li>
                 <li>Caregiver yes/no questions and answers go through this app's server, and its Upstash Redis store if one is set up.</li>
+                <li>Depending on your browser and the voice you choose, spoken text may be processed by an online voice service. Choose an offline voice in your system settings if you want to avoid that.</li>
               </ul>
             </section>
           </Section>
