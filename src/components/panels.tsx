@@ -64,7 +64,7 @@ export function EyeMeter({ score, threshold }: { score: number; threshold: numbe
           className={`motion-progress absolute inset-0 rounded-pill ${closed ? "bg-danger" : "bg-ok"}`}
           style={{ transform: `scaleX(${value})`, transition: "transform var(--duration-gauge) linear" }}
         />
-        <div className="absolute inset-y-0 w-0.5 bg-inverse" style={{ left: `${threshold * 100}%` }} title="Closed-eye threshold" />
+        <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-inverse ring-1 ring-on-inverse" style={{ left: `${threshold * 100}%` }} title="Closed-eye threshold" />
       </div>
     </div>
   );
@@ -145,17 +145,18 @@ export function BlinkGauge({ closedFor, timing }: { closedFor: number; timing: T
           className={`motion-progress absolute inset-0 ${zone === "sos" ? "bg-danger" : "bg-accent"}`}
           style={{ ...progress, transform: `scaleX(${fill})` }}
         />
-        {/* Boundary ticks drawn above the fill so they stay visible */}
+        {/* Boundary ticks drawn above the fill. White with a near-black ring: 3:1 or more on the
+            dark track and on the blue or red fill alike. */}
         {[timing.naturalMax, timing.dotMax, timing.dashMax].map((s, i) => (
           <div
             key={i}
-            className={`absolute inset-y-0 -translate-x-1/2 bg-inverse ${s === timing.dotMax ? "w-1" : "w-0.5"}`}
+            className={`absolute inset-y-0 -translate-x-1/2 bg-inverse ring-1 ring-on-inverse ${s === timing.dotMax ? "w-1" : "w-0.5"}`}
             style={{ left: pct(s) }}
           />
         ))}
         {/* Edge marker: a full-width layer moved with translateX, so only transform changes */}
         <div className="motion-progress absolute inset-0" style={{ ...progress, transform: `translateX(${fill * 100}%)` }}>
-          {closedFor > 0 && <div className="absolute inset-y-0 left-0 w-1.5 -translate-x-1/2 rounded-pill bg-inverse shadow-raised" />}
+          {closedFor > 0 && <div className="absolute inset-y-0 left-0 w-1.5 -translate-x-1/2 rounded-pill bg-inverse ring-1 ring-on-inverse" />}
         </div>
       </div>
 

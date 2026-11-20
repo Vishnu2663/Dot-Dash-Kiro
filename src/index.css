@@ -38,11 +38,6 @@
 
   --color-focus: #ffffff;
 
-  /* LEGACY aliases, used until tasks b–f move components to the tokens above. Removed in task g. */
-  --color-brand: #ffffff;
-  --color-dot: #4f9dff;
-  --color-dash: #ffc83d;
-
   /* Type scale. Same values as before this spec, pinned here so nothing shrinks. */
   --text-xs: 0.75rem;     --text-xs--line-height: 1rem;
   --text-sm: 0.875rem;    --text-sm--line-height: 1.25rem;
@@ -71,7 +66,6 @@
 
   /* Motion. Every duration is under 400 ms. */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --ease-spring: cubic-bezier(0.2, 0, 0, 1); /* LEGACY alias of ease-standard (no overshoot). Removed in task g. */
 }
 
 :root {
@@ -130,12 +124,6 @@
 /* Staggered tiles: set --i on each tile. 6 tiles: 5 x 30 ms + 220 ms = 370 ms. */
 .anim-tile { animation: enter var(--duration-base) var(--ease-standard) both; animation-delay: calc(var(--i, 0) * var(--stagger-step)); }
 
-/* LEGACY class names kept until tasks b–f, mapped onto the new motion. Removed in task g. */
-.scan-bar { transform-origin: left center; }
-@utility glass { background: var(--color-surface-2); }
-.anim-pop { animation: enter var(--duration-base) var(--ease-standard) both; }
-.anim-slide { animation: slide-in var(--duration-slow) var(--ease-standard) both; }
-
 /*
  * Progress indicators (blink gauge, eye meter, Easy mode scan bar, calibration bar) carry the
  * motion-progress class. They keep moving under reduced motion, so the patient can still see timing.
@@ -144,7 +132,7 @@
 
 /* Reduced motion: the OS setting, or the "Reduce motion" setting in the app. Same rule, written twice. */
 @media (prefers-reduced-motion: reduce) {
-  *:not(.motion-progress):not(.scan-bar), *::before, *::after { /* .scan-bar: LEGACY, removed in task g */
+  *:not(.motion-progress), *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
@@ -152,7 +140,7 @@
     scroll-behavior: auto !important;
   }
 }
-:root[data-reduce-motion] *:not(.motion-progress):not(.scan-bar),
+:root[data-reduce-motion] *:not(.motion-progress),
 :root[data-reduce-motion] *::before,
 :root[data-reduce-motion] *::after {
   animation-duration: 0.01ms !important;
