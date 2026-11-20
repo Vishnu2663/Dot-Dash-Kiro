@@ -13,3 +13,6 @@ inclusion: always
   unit tested with Vitest.
 - Settings persist in `localStorage` under the `dotdash.` prefix.
 - Do not add a dependency when a few lines of code will do.
+- API files run as native ES modules on Vercel, one file per function. Relative imports inside
+  `api/` must include the `.js` extension (`import { x } from "./_lib.js"`), or the function
+  crashes with ERR_MODULE_NOT_FOUND. Keep tests out of `api/` so they are not deployed as functions.

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { bodyOf, kvDel, kvGet, kvSet, requirePost, storeKind, str } from "./_lib";
+import { bodyOf, kvDel, kvGet, kvSet, requirePost, storeKind, str } from "./_lib.js";
 
 const KEY = "dotdash:question";
 const TTL_S = 60 * 60; // an unanswered question expires after an hour

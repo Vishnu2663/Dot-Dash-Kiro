@@ -82,3 +82,20 @@ export async function kvClaim(key: string, ttlSeconds: number): Promise<boolean>
   memory.set(key, String(Date.now() + ttlSeconds * 1000));
   return true;
 }
+
+/** Pulls a JSON array of strings out of a model reply, tolerating code fences and extra prose. */
+export function parseSuggestions(content: string, n: number): string[] {
+  const json = content.match(/\[[\s\S]*\]/)?.[0];
+  if (!json) return [];
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((s): s is string => typeof s === "string")
+      .map((s) => s.trim().slice(0, 140))
+      .filter(Boolean)
+      .slice(0, n);
+  } catch {
+    return [];
+  }
+}

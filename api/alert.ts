@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { bodyOf, kvClaim, requirePost, str } from "./_lib";
+import { bodyOf, kvClaim, requirePost, str } from "./_lib.js";
 
 const SOS_COOLDOWN_S = 30;
 const TELEGRAM = "https://api.telegram.org";

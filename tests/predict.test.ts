@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSuggestions } from "./predict";
+import { parseSuggestions } from "../api/_lib.js";
 
 describe("parseSuggestions", () => {
   it("reads a plain JSON array", () => {
