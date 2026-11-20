@@ -3,6 +3,30 @@ import { bodyOf, parseSuggestions, providerFailureLine, ProviderError, str, toPr
 
 const LANGUAGES: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada" };
 
+/**
+ * Default models, chosen from the providers' deprecation pages. Both can be replaced with
+ * GROQ_MODEL and GEMINI_MODEL. If suggestions only say "Built-in", check these are not retired.
+ */
+export const GROQ_DEFAULT_MODEL = "openai/gpt-oss-20b";
+export const GEMINI_DEFAULT_MODEL = "gemini-3.6-flash";
+/** Reasoning tokens count against this limit, so it is set well above the ~300 tokens the answer needs. */
+export const MAX_OUTPUT_TOKENS = 1024;
+
+/**
+ * Groq request body. GPT-OSS models get low reasoning effort and no reasoning text in the reply
+ * (Groq reasoning docs). Other models get neither field, because Groq does not accept them for every model.
+ */
+export function groqBody(prompt: string, model: string) {
+  const reasoning = model.startsWith("openai/gpt-oss") ? { reasoning_effort: "low", include_reasoning: false } : {};
+  return {
+    model,
+    temperature: 0.3,
+    max_completion_tokens: MAX_OUTPUT_TOKENS,
+    ...reasoning,
+    messages: [{ role: "user", content: prompt }],
+  };
+}
+
 /** One provider reply: the text the model produced and the HTTP status it came with. */
 interface Reply {
   text: string;
@@ -22,12 +46,7 @@ async function askGroq(prompt: string, key: string): Promise<Reply> {
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
-      temperature: 0.3,
-      max_tokens: 300,
-      messages: [{ role: "user", content: prompt }],
-    }),
+    body: JSON.stringify(groqBody(prompt, process.env.GROQ_MODEL || GROQ_DEFAULT_MODEL)),
     signal: AbortSignal.timeout(6000),
   });
   if (!r.ok) throw new ProviderError("bad-status", r.status);
@@ -36,13 +55,13 @@ async function askGroq(prompt: string, key: string): Promise<Reply> {
 }
 
 async function askGemini(prompt: string, key: string): Promise<Reply> {
-  const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+  const model = process.env.GEMINI_MODEL || GEMINI_DEFAULT_MODEL;
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 300 },
+      generationConfig: { temperature: 0.3, maxOutputTokens: MAX_OUTPUT_TOKENS },
     }),
     signal: AbortSignal.timeout(6000),
   });

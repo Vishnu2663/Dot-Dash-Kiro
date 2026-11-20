@@ -50,8 +50,8 @@ The app works with no configuration: Easy mode, Morse mode, calibration and spok
 | `TELEGRAM_CHAT_ID` | The chat that receives alerts. If empty, the chat that last sent `/start` to the bot is used. | Optional |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares the caregiver question between two devices. Without them, one server instance holds it in memory. | Optional |
 | `GROQ_API_KEY` | Groq, tried first for sentence suggestions. | Optional. With neither AI key, built-in phrases are used. |
-| `GEMINI_API_KEY` | Google Gemini, tried only if Groq is not configured, fails, or returns nothing usable. | Optional |
-| `GROQ_MODEL`, `GEMINI_MODEL` | Override the default model names. | Optional |
+| `GEMINI_API_KEY` | Google Gemini, tried only if Groq is not configured, fails, or returns nothing usable. Leave it unset to turn Gemini off. | Optional |
+| `GROQ_MODEL`, `GEMINI_MODEL` | Replace the default models (`openai/gpt-oss-20b` and `gemini-3.6-flash`). | Optional |
 
 To run the API locally, use `npx vercel dev`. To deploy, import the repo into Vercel and set the variables above.
 
@@ -60,8 +60,8 @@ No `.env` or `.env.example` file is committed (both are git-ignored). Every key 
 
 | Service | Variable(s) | Why we use it |
 |---|---|---|
-| **Groq** | `GROQ_API_KEY` | First choice for sentence suggestions (default model `llama-3.1-8b-instant`, set by `GROQ_MODEL`). Note: this is Groq, the inference provider, not xAI's Grok. |
-| **Google Gemini** | `GEMINI_API_KEY` | Fallback if Groq fails or is not configured. Suggestions are filtered to start with the letters the patient spelled, and nothing is chosen automatically. |
+| **Groq** | `GROQ_API_KEY` | First choice for sentence suggestions (default model `openai/gpt-oss-20b`, replaceable with `GROQ_MODEL`). Note: this is Groq, the inference provider, not xAI's Grok. |
+| **Google Gemini** | `GEMINI_API_KEY` | Fallback if Groq fails or is not configured (default model `gemini-3.6-flash`, replaceable with `GEMINI_MODEL`; leave the key unset to turn Gemini off). Suggestions are filtered to start with the letters the patient spelled, and nothing is chosen automatically. |
 | **Telegram Bot API** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Sends the emergency alert (eyes closed 3 s, or spelling `HELP`) to a caregiver's phone. The token lets the server post as our bot. The chat id is the caregiver's chat that receives it. If it is empty, the chat that last sent `/start` is used. |
 | Alert passcode | `ALERT_PASSCODE` | Stops strangers from triggering alerts or asking caregiver questions. Checked with a timing-safe compare. |
 | Upstash Redis (optional) | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares caregiver questions across two devices. |
@@ -70,8 +70,16 @@ Only the data listed under "AI used at runtime" goes to Groq or Gemini. Video an
 
 ## AI used at runtime
 Cloud AI is used for one thing: suggesting sentences that start with the letters a patient has spelled. Blink detection, Morse decoding, speech and alerts do not use it.
-**Services.** The browser calls this app's own `POST /api/predict` (a Vercel function). That function asks **Groq** (default model `llama-3.1-8b-instant`) first and **Google Gemini** (default `gemini-2.0-flash`) only if Groq is not configured, fails, or returns nothing usable. The model names can be overridden with `GROQ_MODEL` and `GEMINI_MODEL`.
-**What they receive.** One text prompt built from: the letters typed so far (up to 60 characters), up to 5 sentences recently said in Morse mode, meaning a picked suggestion, a quick phrase or a message spoken with `• — • —` (up to 120 characters each), the language (English, Hindi or Kannada), and how many sentences to return. Nothing else is in the request: no video, camera images, audio (the camera is opened with audio off) or alert passcode. Other body fields are ignored by the server. The app has no name or profile field, but letters and recent sentences are sent as typed, so a spelled name would be sent. We make no claim about how Groq or Google store or use the text; see their own policies.
+**Services.** The browser calls this app's own `POST /api/predict` (a Vercel function). That function asks **Groq** (default model `openai/gpt-oss-20b`) first and **Google Gemini** (default model `gemini-3.6-flash`) only if Groq is not configured, fails, or returns nothing usable. Both defaults can be replaced with `GROQ_MODEL` and `GEMINI_MODEL`. Leaving `GEMINI_API_KEY` unset turns Gemini off.
+**What they receive.** One text prompt built from: the letters typed so far (up to 60 characters), up to 5 sentences recently said in Morse mode, meaning a picked suggestion, a quick phrase or a message spoken with `• — • —` (up to 120 characters each), the language (English, Hindi or Kannada), and how many sentences to return. Nothing else is in the request: no video, camera images, audio (the camera is opened with audio off) or alert passcode. Other body fields are ignored by the server. The app has no name or profile field, but letters and recent sentences are sent as typed, so a spelled name would be sent. On Google's free tier, Google may use content sent to Gemini to improve its products. (Source: [Google's Gemini API pricing page](https://ai.google.dev/gemini-api/docs/pricing).) We make no other claim about how Groq or Google store or use the text; see their own policies.
+**When suggestions only say "Built-in".** Check model retirement first: providers retire model ids, and requests to a retired id fail. Compare the defaults above with the [Groq deprecations](https://console.groq.com/docs/deprecations) and [Gemini deprecations](https://ai.google.dev/gemini-api/docs/deprecations) pages, and set `GROQ_MODEL` or `GEMINI_MODEL` to a current model if needed. Then read the function's runtime logs in Vercel. Each failed provider call writes one line, for example `[predict] provider=groq status=404 reason=bad-status`:
+- `reason=missing-key`: that provider's key is not set for this deployment.
+- `reason=bad-status`: the provider refused the request. `status` is its HTTP status. A 404 usually means the model id is not available to your account (for example, retired), 401 or 403 a key problem, and 429 a rate or quota limit.
+- `reason=timeout`: no answer within 6 seconds.
+- `reason=network-error`: the request did not reach the provider.
+- `reason=unparseable-reply`: the provider answered, but not with a list of sentences.
+
+The line never contains keys, typed letters, sentences or the provider's reply.
 **Labels.** Every suggestion tile says "AI" or "Built-in". The server marks AI sentences in its response, and the app never labels a sentence "AI" on its own.
 **Off switch.** Settings > "Use cloud AI for suggestions" (on by default). When off, the app sends no request to `/api/predict` and uses only built-in phrases. Unit tests check that no `fetch` happens when it is off, and that the request body holds only those four fields when it is on.
 **If they are down.** Groq is tried, then Gemini (6 s limit for each). If neither answers, a provider is not configured, or nothing usable arrives within 9 s, the app keeps the built-in phrases, which are shown instantly before any cloud answer, and shows the note "Using built-in suggestions for now." Every suggestion, from either source, must start with the typed letters, and nothing is chosen without a blink.

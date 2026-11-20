@@ -19,19 +19,20 @@ The handler catches it, logs one line, and tries the next provider. The response
 a number. No free text can reach it, so keys, letters, sentences, the prompt and reply bodies can't
 be logged. Error bodies from providers are never read into the log.
 
-## Default models
-Chosen from the official pages listed under Sources. Final values need the open questions below answered.
+## Default models (decided)
+| Provider | Retired default | New default | Request settings |
+|---|---|---|---|
+| Groq | `llama-3.1-8b-instant` (shutdown 08/16/26) | `openai/gpt-oss-20b` | `max_completion_tokens: 1024`; for `openai/gpt-oss*` only: `reasoning_effort: "low"`, `include_reasoning: false` |
+| Gemini | `gemini-2.0-flash` (shutdown June 1, 2026) | `gemini-3.6-flash` | `maxOutputTokens: 1024`; no thinking field |
 
-| Provider | Retired default | Replacement on the official page |
-|---|---|---|
-| Groq | `llama-3.1-8b-instant` (shutdown 08/16/26) | `openai/gpt-oss-20b` |
-| Gemini | `gemini-2.0-flash` (shutdown June 1, 2026) | `gemini-3.6-flash` (no shutdown date announced) |
-
-Both replacements are reasoning models. Reasoning output counts against the output limit, so the
-current 300-token limit can produce empty text, which would be logged as `unparseable-reply`.
-- Groq `gpt-oss-20b`: send `reasoning_effort: "low"` and `include_reasoning: false`, and raise the limit.
-  Only send these when the model id starts with `openai/gpt-oss`, because other models reject or ignore them.
-- Gemini `gemini-3.6-flash`: default thinking is "medium"; `minimal` is supported. Use the lowest level.
+- The defaults are `GROQ_DEFAULT_MODEL` and `GEMINI_DEFAULT_MODEL` in `api/predict.ts`. `GROQ_MODEL` and
+  `GEMINI_MODEL` replace them; an empty value falls back to the default.
+- Reasoning fields go only to GPT-OSS models, because Groq's docs list `low` and `include_reasoning` per
+  model family. A `GROQ_MODEL` override to another family gets neither.
+- Gemini thinking is left at the model's default. The thinking docs show `thinking_level` only for the
+  Interactions API, and the field for `generateContent` was not confirmed, so it is not sent.
+- Privacy text: one sentence from Google's pricing page about the free tier, attributed. No other
+  provider-side claim.
 
 ## Sources
 - https://console.groq.com/docs/deprecations
@@ -41,10 +42,8 @@ current 300-token limit can produce empty text, which would be logged as `unpars
 - https://aistudio.google.com/docs/pricing
 - https://aistudio.google.com/docs/thinking
 
-## Open questions (need the owner's decision)
-1. Groq free plan: the rate-limits page lists `openai/gpt-oss-20b` but labels the table "base limits for
-   the Developer plan". Whether the free plan includes it is not confirmed.
-2. Gemini free tier: Google's pricing page says free-tier content is "used to improve our products";
-   the paid tier says it is not. This affects what the "What is sent to the cloud" panel should say.
-3. Gemini thinking control: the docs show `thinking_level` for the newer Interactions API. The exact
-   field for the `generateContent` endpoint this app uses is not confirmed.
+## Decisions on the earlier open questions
+1. Groq free plan: not proven from the docs. The owner tests with a real call; a refusal shows as
+   `reason=bad-status` with the HTTP status in the log line.
+2. Gemini stays as the fallback; the free-tier sentence is shown in the panel and README.
+3. No Gemini thinking field is sent (see above).

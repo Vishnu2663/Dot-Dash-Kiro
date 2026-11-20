@@ -138,3 +138,67 @@ describe("provider failure log lines", () => {
     }
   });
 });
+
+describe("default models and request bodies", () => {
+  const fetchMock = vi.fn();
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("GROQ_API_KEY", GROQ_KEY);
+    vi.stubEnv("GEMINI_API_KEY", GEMINI_KEY);
+    vi.stubEnv("GROQ_MODEL", "");
+    vi.stubEnv("GEMINI_MODEL", "");
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+  const sentBody = (i: number) => JSON.parse(fetchMock.mock.calls[i][1].body);
+
+  it("sends Groq the new default model with low reasoning, no reasoning text and 1024 tokens", async () => {
+    fetchMock.mockResolvedValueOnce(groqOk(["Please wait."]));
+    await call({ letters: "PL", lang: "en", n: 6 });
+    const body = sentBody(0);
+    expect(body.model).toBe("openai/gpt-oss-20b");
+    expect(body.reasoning_effort).toBe("low");
+    expect(body.include_reasoning).toBe(false);
+    expect(body.max_completion_tokens).toBe(1024);
+    expect(body).not.toHaveProperty("max_tokens");
+    expect(body).not.toHaveProperty("reasoning_format"); // not supported on GPT-OSS
+  });
+
+  it("sends Gemini the new default model with 1024 output tokens and no thinking field", async () => {
+    vi.stubEnv("GROQ_API_KEY", "");
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '["Please wait."]' }] } }] })));
+    await call({ letters: "PL", lang: "en", n: 6 });
+    expect(String(fetchMock.mock.calls[0][0])).toContain("/models/gemini-3.6-flash:generateContent");
+    const config = sentBody(0).generationConfig;
+    expect(config.maxOutputTokens).toBe(1024);
+    expect(Object.keys(config).sort()).toEqual(["maxOutputTokens", "temperature"]);
+  });
+
+  it("still lets GROQ_MODEL and GEMINI_MODEL replace the defaults", async () => {
+    vi.stubEnv("GROQ_MODEL", "qwen/qwen3.8-27b");
+    vi.stubEnv("GEMINI_MODEL", "gemini-3.8-flash");
+    fetchMock.mockResolvedValue(new Response("nope", { status: 404 }));
+    await call({ letters: "PL", lang: "en", n: 6 });
+    const groq = sentBody(0);
+    expect(groq.model).toBe("qwen/qwen3.8-27b");
+    // Reasoning fields are only sent to GPT-OSS models.
+    expect(groq).not.toHaveProperty("reasoning_effort");
+    expect(groq).not.toHaveProperty("include_reasoning");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("/models/gemini-3.8-flash:generateContent");
+  });
+
+  it("logs the HTTP status when the account cannot use the model", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("model not found", { status: 404 })).mockResolvedValueOnce(new Response("denied", { status: 403 }));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await call({ letters: "PL", lang: "en", n: 6 });
+    expect(warn.mock.calls.map((a) => a[0])).toEqual([
+      "[predict] provider=groq status=404 reason=bad-status",
+      "[predict] provider=gemini status=403 reason=bad-status",
+    ]);
+  });
+});

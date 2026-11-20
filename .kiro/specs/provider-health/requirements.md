@@ -36,12 +36,17 @@ Out of scope, and unchanged: blink timing, the caregiver channel, alerts, and al
 1. The default Groq model shall be one listed as a production model and not deprecated on Groq's official pages, and available on Groq's free plan.
 2. The default Gemini model shall be one with no shutdown date announced on Google's official deprecation page, and "Free of charge" on the free tier.
 3. `GROQ_MODEL` and `GEMINI_MODEL` shall still override the defaults.
-4. While the default model is a reasoning model, the request shall limit reasoning so the answer fits within the output limit.
+4. While the Groq model is a GPT-OSS model, the request shall send `reasoning_effort: "low"` and `include_reasoning: false`, and shall not send them to other models.
+5. Both providers shall allow 1024 output tokens (Groq `max_completion_tokens`, Gemini `maxOutputTokens`).
+6. The Gemini request shall not include any thinking field that is not confirmed for the `generateContent` endpoint.
+7. When `GEMINI_API_KEY` is unset, Gemini shall not be called.
 
 ### Requirement 3: README
 1. The README shall name both default models.
 2. The README shall say they can be replaced with `GROQ_MODEL` and `GEMINI_MODEL`.
 3. The README shall say that model retirement is the first thing to check when suggestions only show "Built-in", and how to read the log line.
+4. The README and the "What is sent to the cloud" panel shall say: "On Google's free tier, Google may use content sent to Gemini to improve its products.", attributed to Google's pricing page. They shall make no other claim about how Groq or Google store text.
+5. The README shall say that leaving `GEMINI_API_KEY` unset turns Gemini off.
 
 ### Requirement 4: Tests
 1. Tests shall cover each failure reason and check the exact log line.

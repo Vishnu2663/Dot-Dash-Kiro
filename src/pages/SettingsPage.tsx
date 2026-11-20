@@ -107,6 +107,7 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
                   </ul>
                   <p className="mt-3"><b>Never sent for suggestions:</b> video, camera images, audio (the microphone is never opened), the alert passcode or your settings. Dot-Dash has no name or profile field. If you spell a name, those letters are sent like any others.</p>
                   <p className="mt-3"><b>Where it goes:</b> to this app's own server, which asks <b>Groq</b> first. It asks <b>Google Gemini</b> only if Groq is not set up, fails, or gives no usable answer. If neither answers within 9 seconds, Dot-Dash keeps the built-in phrases. Each suggestion is labelled "AI" or "Built-in".</p>
+                  <p className="mt-3">On Google's free tier, Google may use content sent to Gemini to improve its products. <span className="text-muted">(Source: <a className="underline" href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noreferrer">Google's Gemini API pricing page</a>.)</span></p>
                 </>
               ) : (
                 <p className="mt-2"><b>Nothing is sent for suggestions.</b> Cloud AI is off, so suggestions come only from the built-in phrases on this device, labelled "Built-in".</p>

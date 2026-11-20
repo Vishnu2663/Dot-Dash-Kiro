@@ -55,3 +55,5 @@ check the exact boundary: not done at 8 999 ms, fallen back and aborted at 9 000
 ## Not claimed
 Provider-side retention, model speed, and whether the browser's speech voice is synthesised locally or by
 an online service. None of these can be verified from this repo.
+
+One exception, attributed to Google's pricing page: the free-tier sentence about Google using content sent to Gemini (see provider-health).

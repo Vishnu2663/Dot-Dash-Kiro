@@ -54,3 +54,4 @@ rules (passcode checks, input limits, secrets handling).
 ### Requirement 5: README
 1. The README shall have an "AI used at runtime" section stating the services, the data they receive, what happens when they are down, and a plain statement that Kiro was used to build the app.
 2. Every claim in that section shall be traceable to code in this repo. It shall not make claims about provider-side data retention or speed.
+3. Exception (added by the provider-health spec, at the owner's request): the README and the panel may state "On Google's free tier, Google may use content sent to Gemini to improve its products.", attributed to Google's Gemini API pricing page. No other provider-side claim shall be added.
