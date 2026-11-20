@@ -3,10 +3,59 @@ import { bodyOf, str } from "./_lib";
 
 const LANGUAGES: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada" };
 
+/** Pulls a JSON array of strings out of a model reply, tolerating code fences and extra prose. */
+export function parseSuggestions(content: string, n: number): string[] {
+  const json = content.match(/\[[\s\S]*\]/)?.[0];
+  if (!json) return [];
+  try {
+    const parsed: unknown = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((s): s is string => typeof s === "string")
+      .map((s) => s.trim().slice(0, 140))
+      .filter(Boolean)
+      .slice(0, n);
+  } catch {
+    return [];
+  }
+}
+
+async function askGroq(prompt: string, key: string): Promise<string> {
+  const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
+      temperature: 0.3,
+      max_tokens: 300,
+      messages: [{ role: "user", content: prompt }],
+    }),
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!r.ok) throw new Error(`groq ${r.status}`);
+  const data = (await r.json()) as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+async function askGemini(prompt: string, key: string): Promise<string> {
+  const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": key },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 300 },
+    }),
+    signal: AbortSignal.timeout(6000),
+  });
+  if (!r.ok) throw new Error(`gemini ${r.status}`);
+  const data = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+}
+
 /**
- * Suggests short sentences a patient might want to say. Uses any OpenAI-compatible
- * chat endpoint when LLM_API_KEY is set. Without it, returns an empty list and the
- * app falls back to its built-in phrase bank.
+ * Suggests short sentences a patient might want to say. Tries Groq first (fast), then Gemini.
+ * With no keys, or if both fail, returns an empty list and the app uses its built-in phrase bank.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -20,11 +69,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const recent = Array.isArray(body.recent)
     ? body.recent.filter((r): r is string => typeof r === "string").slice(0, 5).map((r) => r.slice(0, 120))
     : [];
+  if (letters.length < 2) return res.status(200).json({ suggestions: [] });
 
-  const key = process.env.LLM_API_KEY;
-  if (!key || letters.length < 2) return res.status(200).json({ suggestions: [] });
-
-  const base = (process.env.LLM_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
   const prompt =
     `A patient who cannot speak is spelling a message letter by letter. They have typed: "${letters}".\n` +
     `Give up to ${n} short, natural sentences in ${lang} that a bedridden patient might want to say. ` +
@@ -32,28 +78,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     (recent.length ? `Sentences they said recently: ${recent.join(" | ")}. ` : "") +
     `Reply with only a JSON array of strings.`;
 
-  try {
-    const r = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: { "content-type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: process.env.LLM_MODEL ?? "gpt-4o-mini",
-        temperature: 0.3,
-        max_tokens: 300,
-        messages: [{ role: "user", content: prompt }],
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!r.ok) return res.status(200).json({ suggestions: [] });
-    const data = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    const json = content.match(/\[[\s\S]*\]/)?.[0] ?? "[]";
-    const parsed: unknown = JSON.parse(json);
-    const suggestions = Array.isArray(parsed)
-      ? parsed.filter((s): s is string => typeof s === "string").map((s) => s.trim().slice(0, 140)).filter(Boolean).slice(0, n)
-      : [];
-    return res.status(200).json({ suggestions });
-  } catch {
-    return res.status(200).json({ suggestions: [] });
+  const providers: [string | undefined, (p: string, k: string) => Promise<string>][] = [
+    [process.env.GROQ_API_KEY, askGroq],
+    [process.env.GEMINI_API_KEY, askGemini],
+  ];
+  for (const [key, ask] of providers) {
+    if (!key) continue;
+    try {
+      const suggestions = parseSuggestions(await ask(prompt, key), n);
+      if (suggestions.length) return res.status(200).json({ suggestions });
+    } catch {
+      /* try the next provider */
+    }
   }
+  return res.status(200).json({ suggestions: [] });
 }

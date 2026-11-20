@@ -48,7 +48,7 @@ The app works with no configuration: Easy mode, Morse mode, calibration and spok
 | `ALERT_PASSCODE` | Required for alerts and caregiver questions. The caregiver types it into Settings. |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram alerts. If the chat id is empty, the chat that last sent `/start` to the bot is used. |
 | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares caregiver questions between two devices. Without it, one server instance holds them in memory. |
-| `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL` | Smarter sentence suggestions from any OpenAI-compatible endpoint. Without it, a built-in phrase bank is used. |
+| `GROQ_API_KEY`, `GEMINI_API_KEY` | Smarter sentence suggestions. Groq is tried first, then Gemini. Without either, a built-in phrase bank is used. Every suggestion is filtered to start with the typed letters. |
 
 To run the API locally, use `npx vercel dev`. To deploy, import the repo into Vercel and set the variables above.
 
