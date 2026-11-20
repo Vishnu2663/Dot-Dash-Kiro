@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Button, Card, PageTitle } from "../components/ui";
-import { sendAlert } from "../lib/api";
+import { sendAlert, type AlertResult } from "../lib/api";
 import { DEFAULT_SETTINGS, saveSettings, type Lang, type Settings } from "../lib/settings";
 import { speak } from "../lib/speech";
 import type { Page } from "../App";
@@ -28,12 +28,16 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
 
   const sendTest = async () => {
     const r = await sendAlert("message", "Test message from Dot-Dash");
-    setTestResult(
-      r === "sent" ? { text: "✓ Test message sent to Telegram", ok: true }
-      : r === "unauthorized" ? { text: "Wrong or missing passcode", ok: false }
-      : r === "cooldown" ? { text: "Please wait a few seconds and try again", ok: false }
-      : { text: "Could not send. Check the server keys.", ok: false },
-    );
+    const messages: Record<AlertResult, string> = {
+      sent: "✓ Test message sent to Telegram",
+      unauthorized: "Wrong passcode. It must match ALERT_PASSCODE on the server exactly.",
+      cooldown: "Please wait a few seconds and try again",
+      "not-configured": "TELEGRAM_BOT_TOKEN is missing on the server. Add it in Vercel and redeploy.",
+      "no-chat": "No Telegram chat found. Open your bot in Telegram and press Start, or set TELEGRAM_CHAT_ID.",
+      rejected: "Telegram rejected the message. Check TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID, and that you pressed Start in the bot.",
+      failed: "Could not reach the server. Check your connection and try again.",
+    };
+    setTestResult({ text: messages[r], ok: r === "sent" });
   };
 
   return (
