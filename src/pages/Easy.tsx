@@ -104,7 +104,7 @@ export function Easy({ settings, onHome }: { settings: Settings; onHome: () => v
                   {i === active && (
                     <span
                       key={`${active}-${settings.scanMs}`}
-                      className="absolute inset-x-0 bottom-0 h-2 bg-black/60"
+                      className="scan-bar absolute inset-x-0 bottom-0 h-2 bg-black/60"
                       style={{ animation: `scan ${settings.scanMs}ms linear forwards` }}
                       aria-hidden="true"
                     />
