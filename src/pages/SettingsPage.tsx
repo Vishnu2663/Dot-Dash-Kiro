@@ -15,7 +15,7 @@ function Section({ title, hint, children }: { title: string; hint?: string; chil
   );
 }
 
-const field = "w-full rounded-xl border border-line bg-bg px-4 py-3 text-lg";
+const field = "w-full min-h-12 rounded-control border-2 border-line-strong bg-bg px-4 py-3 text-lg";
 
 export function SettingsPage({ settings, onChange, go }: { settings: Settings; onChange: (s: Settings) => void; go: (p: Page) => void }) {
   const [testResult, setTestResult] = useState<{ text: string; ok: boolean } | null>(null);
@@ -47,7 +47,7 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
         <Section title="Blink sensitivity" hint="Lower is more sensitive (dim light, glasses, small eyes). Higher gives fewer false blinks.">
           <div className="flex items-center gap-4">
             <input
-              type="range" min={0.15} max={0.85} step={0.01} className="w-full accent-white" aria-label="Eye-closed threshold"
+              type="range" min={0.15} max={0.85} step={0.01} className="w-full accent-inverse" aria-label="Eye-closed threshold"
               value={settings.timing.threshold}
               onChange={(e) => set({ ...settings, timing: { ...settings.timing, threshold: Number(e.target.value) } })}
             />
@@ -62,7 +62,7 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
         <Section title="Easy mode scanning speed" hint="In Easy mode a highlight moves across the options and you blink to choose. This sets how long each option stays highlighted. Slower is easier to time.">
           <div className="flex items-center gap-4">
             <input
-              type="range" min={1500} max={4000} step={250} className="w-full accent-white" aria-label="Seconds per highlight"
+              type="range" min={1500} max={4000} step={250} className="w-full accent-inverse" aria-label="Seconds per highlight"
               value={settings.scanMs}
               onChange={(e) => set({ ...settings, scanMs: Number(e.target.value) })}
             />
@@ -84,18 +84,33 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
 
         <Section title="Sound cues" hint="Short beeps when a dot, dash or letter is recognised, so you know a blink was counted.">
           <label className="flex cursor-pointer items-center gap-4 text-lg font-semibold">
-            <input type="checkbox" className="size-6 accent-white" checked={settings.sound} onChange={(e) => set({ ...settings, sound: e.target.checked })} />
+            <input type="checkbox" className="size-6 accent-inverse" checked={settings.sound} onChange={(e) => set({ ...settings, sound: e.target.checked })} />
             {settings.sound ? "Sounds on" : "Sounds off"}
+          </label>
+        </Section>
+
+        <Section
+          title="Reduce motion"
+          hint="Stops decorative animation (fades, slides, tiles moving in). The blink gauge and the Easy mode scan bar keep moving, because they show timing. Your device's own reduce-motion setting does the same."
+        >
+          <label className="flex cursor-pointer items-center gap-4 text-lg font-semibold">
+            <input
+              type="checkbox"
+              className="size-6 accent-inverse"
+              checked={settings.reduceMotion}
+              onChange={(e) => set({ ...settings, reduceMotion: e.target.checked })}
+            />
+            Reduce motion: {settings.reduceMotion ? "On" : "Off"}
           </label>
         </Section>
 
         <div className="md:col-span-2">
           <Section title="Cloud AI for suggestions" hint="Sentence suggestions can come from cloud AI. When this is off, only the built-in phrases are used and nothing is sent for suggestions.">
             <label className="flex cursor-pointer items-center gap-4 text-lg font-semibold">
-              <input type="checkbox" className="size-6 accent-white" checked={settings.cloudAi} onChange={(e) => set({ ...settings, cloudAi: e.target.checked })} />
+              <input type="checkbox" className="size-6 accent-inverse" checked={settings.cloudAi} onChange={(e) => set({ ...settings, cloudAi: e.target.checked })} />
               Use cloud AI for suggestions: {settings.cloudAi ? "On" : "Off"}
             </label>
-            <section aria-labelledby="cloud-sent" className="mt-5 rounded-2xl border border-line bg-bg p-4 text-base">
+            <section aria-labelledby="cloud-sent" className="mt-5 rounded-tile border border-line bg-bg p-4 text-base">
               <h3 id="cloud-sent" className="text-lg font-bold">What is sent to the cloud</h3>
               {settings.cloudAi ? (
                 <>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Badge, Button, Card } from "../components/ui";
 import type { Settings } from "../lib/settings";
+import { motionReduced } from "../lib/motion";
 import type { Page } from "../App";
 
 const B = ({ children }: { children: ReactNode }) => <b className="text-text">{children}</b>;
@@ -60,7 +61,7 @@ export function Home({ go, settings }: { go: (p: Page) => void; settings: Settin
         )}
         <div className="mt-7 flex flex-wrap gap-3">
           <Button variant="primary" size="lg" onClick={() => go(calibrated ? "easy" : "calibrate")}>{calibrated ? "Start talking" : "Start setup"}</Button>
-          <Button size="lg" onClick={() => document.getElementById("setup")?.scrollIntoView({ behavior: "smooth" })}>See the steps ↓</Button>
+          <Button size="lg" onClick={() => document.getElementById("setup")?.scrollIntoView({ behavior: motionReduced() ? "auto" : "smooth" })}>See the steps ↓</Button>
         </div>
       </section>
 

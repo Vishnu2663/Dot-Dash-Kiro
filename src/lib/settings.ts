@@ -12,6 +12,8 @@ export interface Settings {
   sound: boolean;
   /** Allow sentence suggestions from cloud AI (Groq, then Gemini). Off means built-in phrases only. */
   cloudAi: boolean;
+  /** Stop decorative motion. Progress indicators (blink gauge, scan bar) keep moving. */
+  reduceMotion: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   scanMs: 1500,
   sound: true,
   cloudAi: true,
+  reduceMotion: false,
 };
 
 const SETTINGS_KEY = "dotdash.settings";
@@ -39,6 +42,7 @@ export function loadSettings(): Settings {
         scanMs: Math.min(4000, Math.max(1500, Number(raw.scanMs) || 1500)),
         sound: raw.sound !== false,
         cloudAi: raw.cloudAi !== false,
+        reduceMotion: raw.reduceMotion === true,
       };
     }
   } catch {

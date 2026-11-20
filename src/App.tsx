@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Shell } from "./components/Shell";
 import { loadSettings, type Settings } from "./lib/settings";
 import { useTracker } from "./lib/tracker";
+import { applyReduceMotion } from "./lib/motion";
 import { Home } from "./pages/Home";
 import { Morse } from "./pages/Morse";
 import { Easy } from "./pages/Easy";
@@ -41,6 +42,11 @@ export function App() {
   useEffect(() => {
     if (!CAMERA_PAGES.includes(page)) stop();
   }, [page, stop]);
+
+  // The "Reduce motion" setting: mirrored onto <html> so the CSS rule applies everywhere.
+  useEffect(() => {
+    applyReduceMotion(settings.reduceMotion);
+  }, [settings.reduceMotion]);
 
   const go = useCallback((p: Page) => {
     location.hash = p === "home" ? "/" : `/${p}`;

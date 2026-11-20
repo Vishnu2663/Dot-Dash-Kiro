@@ -111,7 +111,7 @@ export function Caregiver({ settings, onChange }: { settings: Settings; onChange
             </form>
             {error && <p role="alert" className="font-semibold text-danger">{error}</p>}
             {store === "memory" && (
-              <p role="status" className="rounded-xl border border-dash/40 bg-dash/10 p-3 text-dash">
+              <p role="status" className="rounded-control border border-warn bg-warn-tint p-3 text-warn">
                 The server has no shared store (Upstash Redis) set up, so this only works reliably when you run it on one computer. Add the Redis variables before using it between two devices.
               </p>
             )}
