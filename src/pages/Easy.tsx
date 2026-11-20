@@ -71,10 +71,9 @@ export function Easy({ settings, onHome }: { settings: Settings; onHome: () => v
   }
 
   return (
-    <div className="space-y-6">
-      <Notice notice={notice} onDismiss={() => setNotice(null)} />
-      <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
-        <aside className="space-y-4">
+    <div>
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start" aria-label="Camera and blink gauge">
           <Sidebar tracker={input} score={input.score} closedFor={input.closedFor} timing={settings.timing}>
             <Card>
               <h2 className="text-lg font-bold">Emergency</h2>
@@ -82,39 +81,58 @@ export function Easy({ settings, onHome }: { settings: Settings; onHome: () => v
             </Card>
           </Sidebar>
         </aside>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Coach text={coach} tone={tone} />
-          <Card className="flex min-h-28 items-center">
-            <p className="text-4xl font-bold sm:text-5xl" aria-live="polite">
-              {chosenText ? `“${chosenText}”` : <span className="text-3xl font-semibold text-muted">Your choice appears here</span>}
+          <Card className="flex min-h-28 flex-wrap items-center gap-4">
+            <p className="min-w-0 break-words text-4xl font-bold sm:text-5xl" aria-live="polite">
+              {chosenText
+                ? <span key={chosenText} className="anim-enter inline-block">“{chosenText}”</span>
+                : <span className="text-3xl font-semibold text-muted">Your choice appears here</span>}
             </p>
             {chosenText && (
               <Button className="ml-auto shrink-0" onClick={() => speak(chosenText, settings.lang)}>🔊 Again</Button>
             )}
           </Card>
           <ul className="grid grid-cols-2 gap-4 md:grid-cols-4" aria-label="Options. Blink while one is highlighted to choose it.">
-            {TILES.map((t, i) => (
-              <li key={t.label}>
-                <button
-                  onClick={() => choose(i)}
-                  className={`relative flex min-h-40 w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-4 p-3 text-center transition ${i === active || i === flash ? "scale-[1.03] border-white bg-white text-black" : "border-line bg-surface-2 hover:border-white"}`}
-                >
-                  <span className="text-5xl grayscale" aria-hidden="true">{t.icon}</span>
-                  <span className="text-2xl font-bold leading-tight xl:text-3xl">{t.label}</span>
-                  {i === active && (
-                    <span
-                      key={`${active}-${settings.scanMs}`}
-                      className="scan-bar absolute inset-x-0 bottom-0 h-2 bg-black/60"
-                      style={{ animation: `scan ${settings.scanMs}ms linear forwards` }}
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              </li>
-            ))}
+            {TILES.map((t, i) => {
+              const on = i === active || i === flash;
+              return (
+                <li key={t.label} className="relative">
+                  {/*
+                    The highlight ring scales and fades in on the newly active tile, so the highlight is
+                    seen to move. The tile's own colours switch instantly, so text never loses contrast
+                    part-way through a fade.
+                  */}
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute -inset-1.5 rounded-card border-4 border-inverse transition-[transform,opacity] duration-150 ease-standard ${on ? "scale-100 opacity-100" : "scale-105 opacity-0"}`}
+                  />
+                  <button
+                    onClick={() => choose(i)}
+                    aria-current={i === active ? "true" : undefined}
+                    className={`relative flex min-h-40 w-full flex-col items-center justify-center gap-2 overflow-hidden rounded-tile border-4 p-3 text-center ${on ? "border-inverse bg-inverse text-on-inverse" : "border-line-strong bg-surface-2 text-text hover:border-inverse"}`}
+                  >
+                    <span className="text-5xl grayscale" aria-hidden="true">{t.icon}</span>
+                    <span className="text-2xl font-bold leading-tight xl:text-3xl">{t.label}</span>
+                    {i === active && (
+                      // Progress indicator: shows how long the highlight stays. Keeps moving under reduced motion.
+                      <span
+                        key={`${active}-${settings.scanMs}`}
+                        className="motion-progress absolute inset-x-0 bottom-0 h-2 bg-on-inverse"
+                        style={{ animation: `scan ${settings.scanMs}ms linear forwards` }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
+
+      {/* Last in the DOM, pinned to the bottom of the screen: tab order matches what you see. */}
+      <Notice notice={notice} onDismiss={() => setNotice(null)} />
     </div>
   );
 }

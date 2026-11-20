@@ -172,8 +172,8 @@ export function Calibrate({ settings, onSaved, go }: { settings: Settings; onSav
         <div className="space-y-6">
           <ol className="grid gap-3 sm:grid-cols-4" aria-label="Calibration steps">
             {GROUPS.map((g, i) => (
-              <li key={g} className={`rounded-xl border p-3 ${i === shownGroup ? "border-white bg-white/10" : i < shownGroup ? "border-ok/50 bg-ok/10" : "border-line bg-surface"}`}>
-                <span className={`grid size-6 place-items-center rounded-full text-xs font-bold ${i < shownGroup ? "bg-ok text-black" : i === shownGroup ? "bg-white text-black" : "bg-surface-2 text-muted"}`}>
+              <li key={g} className={`rounded-control border p-3 ${i === shownGroup ? "border-inverse bg-surface-3" : i < shownGroup ? "border-ok bg-ok-tint" : "border-line bg-surface"}`}>
+                <span className={`grid size-6 place-items-center rounded-pill text-xs font-bold ${i < shownGroup ? "bg-ok text-on-status" : i === shownGroup ? "bg-inverse text-on-inverse" : "bg-surface-2 text-muted"}`}>
                   {i < shownGroup ? "✓" : i + 1}
                 </span>
                 <p className="mt-1.5 text-base font-bold leading-tight">{g}</p>
@@ -189,7 +189,7 @@ export function Calibrate({ settings, onSaved, go }: { settings: Settings; onSav
                   <li><b className="text-text">Eyes open</b> and <b className="text-text">eyes closed</b> (a few seconds each).</li>
                   <li><b className="text-text">3 short blinks</b>, then separately <b className="text-text">3 long blinks</b>.</li>
                 </ol>
-                {failure && <p className="rounded-xl border border-danger/60 bg-danger/10 p-4 text-lg font-semibold text-danger" role="alert">{failure}</p>}
+                {failure && <p className="rounded-control border border-danger bg-danger-tint p-4 text-lg font-semibold text-danger" role="alert">{failure}</p>}
                 <Button variant="primary" size="lg" onClick={startCalibration} disabled={status === "loading"}>
                   {status === "loading" ? "Starting camera…" : failure ? "Try again" : "Start calibration"}
                 </Button>
@@ -200,14 +200,17 @@ export function Calibrate({ settings, onSaved, go }: { settings: Settings; onSav
               <>
                 <p className="text-sm font-semibold uppercase tracking-wide text-muted">Step {current.group + 1} of 4 · {current.title}</p>
                 <p className="text-4xl font-bold leading-tight" aria-live="polite">{ready || !isBlinkStep ? current.text : "Get ready…"}</p>
-                <div className="h-3 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
-                  <div className="h-full rounded-full bg-white transition-[width] duration-100" style={{ width: `${100 - (secondsLeft / current.limit) * 100}%` }} />
+                <div className="h-3 overflow-hidden rounded-pill bg-surface-2" aria-hidden="true">
+                  <div
+                    className="motion-progress h-full rounded-pill bg-inverse"
+                    style={{ transform: `scaleX(${Math.min(1, Math.max(0, 1 - secondsLeft / current.limit))})`, transition: "transform var(--duration-slow) linear" }}
+                  />
                 </div>
                 <p className="text-2xl font-semibold text-muted">
                   {secondsLeft} s left
                   {isBlinkStep && <> · recorded: <b className="text-text">{recorded} / {TARGET}</b></>}
                 </p>
-                {hint && <p className="text-xl font-semibold text-dash" role="status">{hint}</p>}
+                {hint && <p className="text-xl font-semibold text-warn" role="status">{hint}</p>}
               </>
             )}
 
@@ -220,14 +223,14 @@ export function Calibrate({ settings, onSaved, go }: { settings: Settings; onSav
                     ["Dot / dash boundary", `${result.timing.dotMax.toFixed(1)} s`],
                     ["SOS after", `${result.timing.dashMax.toFixed(1)} s`],
                   ].map(([k, v]) => (
-                    <div key={k} className="rounded-xl bg-surface-2 p-4">
+                    <div key={k} className="rounded-control bg-surface-2 p-4">
                       <dt className="text-sm text-muted">{k}</dt>
                       <dd className="text-2xl font-bold">{v}</dd>
                     </div>
                   ))}
                 </dl>
                 {(result.shorts < TARGET || result.longs < TARGET) && (
-                  <p className="rounded-xl border border-dash/60 bg-dash/10 p-4 text-lg">
+                  <p className="rounded-control border border-warn bg-warn-tint p-4 text-lg">
                     Only {result.shorts} short and {result.longs} long blinks were recorded, so some default timing is used. Run the calibration again for a better fit.
                   </p>
                 )}

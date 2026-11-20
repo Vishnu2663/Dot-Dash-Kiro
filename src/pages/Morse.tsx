@@ -12,6 +12,7 @@ import { FALLBACK_NOTE, builtInSuggestions, improveSuggestions, type Suggestion 
 import { loadRecent, pushRecent, type Settings } from "../lib/settings";
 import { speak, YES_NO } from "../lib/speech";
 import { useBlinkInput } from "../lib/tracker";
+import { motionReduced } from "../lib/motion";
 import { useQuestion } from "../lib/useQuestion";
 
 const MAX_SUGGESTIONS = 6;
@@ -211,21 +212,25 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
     setMessage("");
   };
 
+  // Jump to the chart on small screens. A plain #anchor would change the hash route, so scroll instead.
+  const showChart = () => {
+    const chart = document.getElementById("morse-chart");
+    chart?.scrollIntoView({ behavior: motionReduced() ? "auto" : "smooth", block: "start" });
+    chart?.focus({ preventScroll: true });
+  };
+
+  // DOM order = visual order at every size: tracker, then the main column, then the chart.
+  // The grid only changes the number of columns; nothing is reordered with CSS `order`.
   return (
-    <div className="space-y-6">
-      <Notice notice={notice} onDismiss={() => setNotice(null)} />
-      <QuestionCard question={question.open} onAnswer={(a) => void submitAnswer(a)} onHide={question.hide} />
-
-      <div className="grid gap-6 lg:grid-cols-[17rem_1fr] xl:grid-cols-[17rem_1fr_21rem]">
-        <div className="order-3 lg:order-none lg:col-start-1 lg:row-span-2 lg:row-start-1 xl:row-span-1">
-          <MorseChart code={code} />
-        </div>
-
-        <aside className="order-1 space-y-4 lg:order-none lg:col-start-2 lg:row-start-1 xl:col-start-3">
+    <div>
+      <div className="grid gap-6 lg:grid-cols-[20rem_minmax(0,1fr)] xl:grid-cols-[20rem_minmax(0,1fr)_17rem]">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-20 lg:self-start" aria-label="Camera and blink gauge">
           <Sidebar tracker={input} score={input.score} closedFor={input.closedFor} timing={settings.timing} />
         </aside>
 
-        <div className="order-2 space-y-6 lg:order-none lg:col-start-2 lg:row-start-2 xl:row-start-1">
+        <div className="min-w-0 space-y-6">
+          {/* The question banner lives in this column, so it never covers or moves the blink gauge. */}
+          <QuestionCard question={question.open} onAnswer={(a) => void submitAnswer(a)} onHide={question.hide} />
           <Coach text={coach} tone={tone} />
           <Card>
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">Your message</h2>
@@ -234,6 +239,7 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
               <Button variant="primary" onClick={() => say(text)} disabled={!text.trim()}>🔊 Speak</Button>
               <Button onClick={deleteLetter} disabled={!text}>⌫ Delete letter</Button>
               <Button onClick={clearAll} disabled={!text && !code}>Clear</Button>
+              <Button className="xl:hidden" onClick={showChart}>Morse chart ↓</Button>
               <Button variant="ghost" className="ml-auto" onClick={onHome}>← Home</Button>
             </div>
           </Card>
@@ -244,7 +250,14 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
             <Suggestions suggestions={suggestions} loading={loading} note={fallbackNote} code={code} typed={text} onPick={speakChoice} />
           </Card>
         </div>
+
+        <div className="min-w-0 lg:col-span-2 xl:col-span-1">
+          <MorseChart code={code} />
+        </div>
       </div>
+
+      {/* Last in the DOM, pinned to the bottom of the screen: tab order matches what you see. */}
+      <Notice notice={notice} onDismiss={() => setNotice(null)} />
     </div>
   );
 }
