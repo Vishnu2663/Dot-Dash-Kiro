@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Run tests when core logic changes",
+  "description": "Runs the unit tests whenever blink, Morse or phrase logic is saved, so timing rules do not regress.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["src/lib/blink.ts", "src/lib/morse.ts", "src/lib/phrases.ts", "src/lib/*.test.ts"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `npm test` and fix any failure caused by the change. Do not weaken a test to make it pass."
+  }
+}
