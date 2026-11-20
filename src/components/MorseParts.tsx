@@ -1,6 +1,7 @@
 import type { Question } from "../lib/api";
 import { codeFor, lookahead, pretty } from "../lib/morse";
 import { matchQuickPhrase } from "../lib/phrases";
+import { SOURCE_LABEL, type Suggestion } from "../lib/suggest";
 import { Button } from "./ui";
 
 /** The code being blinked right now and the message typed so far. */
@@ -36,17 +37,20 @@ export function Composer({ code, text }: { code: string; text: string }) {
 
 /** Numbered sentence tiles. Each shows the Morse code of its number. */
 export function Suggestions({
-  suggestions, loading, code, typed, onPick,
-}: { suggestions: string[]; loading: boolean; code: string; typed: string; onPick: (s: string) => void }) {
+  suggestions, loading, note, code, typed, onPick,
+}: { suggestions: Suggestion[]; loading: boolean; note: string; code: string; typed: string; onPick: (s: string) => void }) {
   if (!suggestions.length) {
     return (
-      <p className="rounded-xl border border-dashed border-line p-5 text-lg text-muted">
-        {loading
-          ? "Finding sentences…"
-          : typed.trim().length >= 2
-            ? "No sentence starts with these letters yet. Keep spelling, or delete a letter."
-            : "After you spell 2 letters, sentences that start with them appear here."}
-      </p>
+      <div className="rounded-xl border border-dashed border-line p-5 text-lg text-muted">
+        <p>
+          {loading
+            ? "Finding sentences…"
+            : typed.trim().length >= 2
+              ? "No sentence starts with these letters yet. Keep spelling, or delete a letter."
+              : "After you spell 2 letters, sentences that start with them appear here."}
+        </p>
+        <p className="mt-2 text-base" aria-live="polite">{note}</p>
+      </div>
     );
   }
   return (
@@ -59,16 +63,22 @@ export function Suggestions({
           const partial = code !== "" && numCode.startsWith(code) && !exact;
           const off = code !== "" && !numCode.startsWith(code);
           return (
-            <li key={s}>
+            <li key={s.text}>
               <button
-                onClick={() => onPick(s)}
+                onClick={() => onPick(s.text)}
                 className={`anim-pop flex min-h-28 w-full items-center gap-4 rounded-2xl border-4 p-4 text-left transition ${exact ? "border-white bg-white text-black" : partial ? "border-white bg-surface-2" : "border-line bg-surface-2 hover:border-white"} ${off ? "opacity-40" : ""}`}
               >
                 <span className="flex w-24 shrink-0 flex-col items-center rounded-xl border border-current/40 px-2 py-1.5 text-center">
                   <span className="text-4xl font-bold leading-none">{n}</span>
                   <span className="mt-1 font-mono text-base font-bold tracking-wider">{pretty(numCode, "")}</span>
                 </span>
-                <span className="text-3xl font-bold leading-snug">{s}</span>
+                <span className="flex min-w-0 flex-col items-start gap-2">
+                  <span className="text-3xl font-bold leading-snug">{s.text}</span>
+                  <span className="rounded-md border border-current/50 px-2 py-0.5 text-sm font-semibold">
+                    <span className="sr-only">Source: </span>
+                    {SOURCE_LABEL[s.source]}
+                  </span>
+                </span>
               </button>
             </li>
           );
@@ -77,6 +87,7 @@ export function Suggestions({
       <p className="mt-4 text-base text-muted" aria-live="polite">
         <b className="text-white">To choose one, blink its number in Morse</b> (shown on each tile), then wait 1.5 s. Keep spelling to narrow the list.
         {loading && " · improving suggestions…"}
+        {note && ` · ${note}`}
       </p>
     </div>
   );

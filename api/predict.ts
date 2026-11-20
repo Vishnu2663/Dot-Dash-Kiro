@@ -61,15 +61,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     (recent.length ? `Sentences they said recently: ${recent.join(" | ")}. ` : "") +
     `Reply with only a JSON array of strings.`;
 
-  const providers: [string | undefined, (p: string, k: string) => Promise<string>][] = [
-    [process.env.GROQ_API_KEY, askGroq],
-    [process.env.GEMINI_API_KEY, askGemini],
+  const providers: [string | undefined, (p: string, k: string) => Promise<string>, "groq" | "gemini"][] = [
+    [process.env.GROQ_API_KEY, askGroq, "groq"],
+    [process.env.GEMINI_API_KEY, askGemini, "gemini"],
   ];
-  for (const [key, ask] of providers) {
+  for (const [key, ask, provider] of providers) {
     if (!key) continue;
     try {
-      const suggestions = parseSuggestions(await ask(prompt, key), n);
-      if (suggestions.length) return res.status(200).json({ suggestions });
+      const texts = parseSuggestions(await ask(prompt, key), n);
+      // Every sentence says where it came from, so the app can label it.
+      if (texts.length) return res.status(200).json({ suggestions: texts.map((text) => ({ text, source: "ai", provider })) });
     } catch {
       /* try the next provider */
     }

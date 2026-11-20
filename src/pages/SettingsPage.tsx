@@ -90,6 +90,37 @@ export function SettingsPage({ settings, onChange, go }: { settings: Settings; o
         </Section>
 
         <div className="md:col-span-2">
+          <Section title="Cloud AI for suggestions" hint="Sentence suggestions can come from cloud AI. When this is off, only the built-in phrases are used and nothing is sent for suggestions.">
+            <label className="flex cursor-pointer items-center gap-4 text-lg font-semibold">
+              <input type="checkbox" className="size-6 accent-white" checked={settings.cloudAi} onChange={(e) => set({ ...settings, cloudAi: e.target.checked })} />
+              Use cloud AI for suggestions: {settings.cloudAi ? "On" : "Off"}
+            </label>
+            <section aria-labelledby="cloud-sent" className="mt-5 rounded-2xl border border-line bg-bg p-4 text-base">
+              <h3 id="cloud-sent" className="text-lg font-bold">What is sent to the cloud</h3>
+              {settings.cloudAi ? (
+                <>
+                  <p className="mt-2"><b>For suggestions</b>, each time your message changes in Morse mode and has 2 or more letters, Dot-Dash sends:</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-6">
+                    <li>The letters typed so far, exactly as typed (up to 60 characters).</li>
+                    <li>Up to 5 sentences recently said in Morse mode: a picked suggestion, a quick phrase, or a message spoken with • — • —.</li>
+                    <li>The language (English, Hindi or Kannada) and how many suggestions to return.</li>
+                  </ul>
+                  <p className="mt-3"><b>Never sent for suggestions:</b> video, camera images, audio (the microphone is never opened), the alert passcode or your settings. Dot-Dash has no name or profile field. If you spell a name, those letters are sent like any others.</p>
+                  <p className="mt-3"><b>Where it goes:</b> to this app's own server, which asks <b>Groq</b> first. It asks <b>Google Gemini</b> only if Groq is not set up, fails, or gives no usable answer. If neither answers within 9 seconds, Dot-Dash keeps the built-in phrases. Each suggestion is labelled "AI" or "Built-in".</p>
+                </>
+              ) : (
+                <p className="mt-2"><b>Nothing is sent for suggestions.</b> Cloud AI is off, so suggestions come only from the built-in phrases on this device, labelled "Built-in".</p>
+              )}
+              <h4 className="mt-4 font-bold">Other connections, whatever this setting says</h4>
+              <ul className="mt-1 list-disc space-y-1 pl-6 text-muted">
+                <li>When the camera starts, the browser downloads the face-tracking model from Google's storage servers. Nothing is uploaded with it.</li>
+                <li>Alerts and test messages go through this app's server to Telegram. The emergency alert text is fixed: "the patient needs help now".</li>
+                <li>Caregiver yes/no questions and answers go through this app's server, and its Upstash Redis store if one is set up.</li>
+              </ul>
+            </section>
+          </Section>
+        </div>
+        <div className="md:col-span-2">
           <Section title="Caregiver alerts" hint="Enter the alert passcode set on the server (ALERT_PASSCODE). It is stored only on this device. Alerts are sent when eyes stay closed for 3 seconds or HELP is spelled.">
             <div className="flex flex-wrap gap-3">
               <input

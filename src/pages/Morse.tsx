@@ -7,7 +7,8 @@ import type { BlinkEvent } from "../lib/blink";
 import { ALERT_MESSAGES, fetchSuggestions, sendAlert } from "../lib/api";
 import { playCue } from "../lib/audio";
 import { answerFor, applyDecoded, decode, endsWithHelp } from "../lib/morse";
-import { localSuggestions, matchQuickPhrase, mergeSuggestions } from "../lib/phrases";
+import { matchQuickPhrase } from "../lib/phrases";
+import { FALLBACK_NOTE, builtInSuggestions, improveSuggestions, type Suggestion } from "../lib/suggest";
 import { loadRecent, pushRecent, type Settings } from "../lib/settings";
 import { speak, YES_NO } from "../lib/speech";
 import { useBlinkInput } from "../lib/tracker";
@@ -18,7 +19,8 @@ const MAX_SUGGESTIONS = 6;
 export function Morse({ settings, onHome }: { settings: Settings; onHome: () => void }) {
   const [text, setText] = useState("");
   const [code, setCode] = useState("");
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [fallbackNote, setFallbackNote] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
@@ -26,7 +28,7 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
   // Refs mirror state so blink callbacks always see the latest values.
   const textRef = useRef("");
   const codeRef = useRef("");
-  const suggestionsRef = useRef<string[]>([]);
+  const suggestionsRef = useRef<Suggestion[]>([]);
   const requestId = useRef(0); // ignores late suggestion responses
 
   const question = useQuestion(settings.passcode);
@@ -37,22 +39,31 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
 
   const setTextBoth = (v: string) => { textRef.current = v; setText(v); };
   const setCodeBoth = (v: string) => { codeRef.current = v; setCode(v); };
-  const setSuggestionsBoth = (v: string[]) => { suggestionsRef.current = v; setSuggestions(v); };
-  const cancelSuggestions = () => { requestId.current++; setLoading(false); setSuggestionsBoth([]); };
+  const setSuggestionsBoth = (v: Suggestion[]) => { suggestionsRef.current = v; setSuggestions(v); };
+  const cancelSuggestions = () => { requestId.current++; setLoading(false); setFallbackNote(""); setSuggestionsBoth([]); };
 
   const say = useCallback((s: string) => speak(s, settings.lang), [settings.lang]);
 
-  /** Show local matches at once, then let the server improve them. */
+  /** Show built-in matches at once, then let cloud AI improve them (if allowed). Falls back after 9 s. */
   const refreshSuggestions = useCallback(async (typed: string) => {
     const id = ++requestId.current;
-    setSuggestionsBoth(localSuggestions(typed, MAX_SUGGESTIONS));
+    setFallbackNote("");
+    setSuggestionsBoth(builtInSuggestions(typed, MAX_SUGGESTIONS));
+    if (!settings.cloudAi) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const remote = await fetchSuggestions(typed, loadRecent(), settings.lang, MAX_SUGGESTIONS);
+    const result = await improveSuggestions({
+      typed,
+      n: MAX_SUGGESTIONS,
+      fetchRemote: (signal) => fetchSuggestions(typed, loadRecent(), settings.lang, MAX_SUGGESTIONS, signal),
+    });
     if (id !== requestId.current) return;
     setLoading(false);
-    if (remote?.length) setSuggestionsBoth(mergeSuggestions(typed, remote, MAX_SUGGESTIONS));
-  }, [settings.lang]);
-
+    setSuggestionsBoth(result.suggestions);
+    setFallbackNote(result.outcome === "fallback" ? FALLBACK_NOTE : "");
+  }, [settings.lang, settings.cloudAi]);
   const speakChoice = useCallback((sentence: string) => {
     requestId.current++;
     setLoading(false);
@@ -115,7 +126,7 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
     // A digit chooses the numbered suggestion when suggestions are showing.
     if (d.kind === "char" && /^[1-9]$/.test(d.value) && suggestionsRef.current.length) {
       const pick = suggestionsRef.current[Number(d.value) - 1];
-      if (pick) speakChoice(pick);
+      if (pick) speakChoice(pick.text);
       else setMessage(`There is no sentence ${d.value}. Choose a number from 1 to ${suggestionsRef.current.length}.`);
       return;
     }
@@ -230,7 +241,7 @@ export function Morse({ settings, onHome }: { settings: Settings; onHome: () => 
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted">
               Sentences starting with “{text.trim() || "…"}”
             </h2>
-            <Suggestions suggestions={suggestions} loading={loading} code={code} typed={text} onPick={speakChoice} />
+            <Suggestions suggestions={suggestions} loading={loading} note={fallbackNote} code={code} typed={text} onPick={speakChoice} />
           </Card>
         </div>
       </div>

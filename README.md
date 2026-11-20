@@ -41,16 +41,41 @@ npm test           # unit tests
 npm run build      # type-check and production build
 ```
 
-The app works with no configuration: Easy mode, Morse mode, calibration and spoken output need no server. The optional features need environment variables (see `.env.example`):
+The app works with no configuration: Easy mode, Morse mode, calibration and spoken output need no server. Everything below is optional, and each feature turns on only when its variables are set. Put them in a local `.env` file (git-ignored, never committed). On Vercel, add the same names under Project Settings > Environment Variables. No `.env.example` file is in the repo, so this table is the list of names.
 
-| Variable | Enables |
-|---|---|
-| `ALERT_PASSCODE` | Required for alerts and caregiver questions. The caregiver types it into Settings. |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Telegram alerts. If the chat id is empty, the chat that last sent `/start` to the bot is used. |
-| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares caregiver questions between two devices. Without it, one server instance holds them in memory. |
-| `GROQ_API_KEY`, `GEMINI_API_KEY` | Smarter sentence suggestions. Groq is tried first, then Gemini. Without either, a built-in phrase bank is used. Every suggestion is filtered to start with the typed letters. |
+| Variable | What it is for | Needed for |
+|---|---|---|
+| `ALERT_PASSCODE` | Passcode the caregiver types into Settings. Without it, `/api/alert` and `/api/ask` reject every request. | Alerts and caregiver questions (required for those features) |
+| `TELEGRAM_BOT_TOKEN` | Lets the server send Telegram messages as your bot. | Alerts (required for that feature) |
+| `TELEGRAM_CHAT_ID` | The chat that receives alerts. If empty, the chat that last sent `/start` to the bot is used. | Optional |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares the caregiver question between two devices. Without them, one server instance holds it in memory. | Optional |
+| `GROQ_API_KEY` | Groq, tried first for sentence suggestions. | Optional. With neither AI key, built-in phrases are used. |
+| `GEMINI_API_KEY` | Google Gemini, tried only if Groq fails or returns nothing. | Optional |
+| `GROQ_MODEL`, `GEMINI_MODEL` | Override the default model names. | Optional |
 
 To run the API locally, use `npx vercel dev`. To deploy, import the repo into Vercel and set the variables above.
+
+## Notice for judges: external services and why
+No `.env` or `.env.example` file is committed (both are git-ignored). Every key is read from `process.env` on the server (Vercel functions in `api/`) and never reaches the browser. The core app (blink detection, Morse, Easy mode, speech) works with none of these.
+
+| Service | Variable(s) | Why we use it |
+|---|---|---|
+| **Groq** (Llama 3.1 8B) | `GROQ_API_KEY` | First choice for sentence suggestions. It answers fast, which matters when each blink is slow. Note: this is Groq, the inference provider, not xAI's Grok. |
+| **Google Gemini** | `GEMINI_API_KEY` | Fallback if Groq fails or is not configured. Suggestions are filtered to start with the letters the patient spelled, and nothing is chosen automatically. |
+| **Telegram Bot API** | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Sends the emergency alert (eyes closed 3 s, or spelling `HELP`) to a caregiver's phone. The token lets the server post as our bot. The chat id is the caregiver's chat that receives it. If it is empty, the chat that last sent `/start` is used. |
+| Alert passcode | `ALERT_PASSCODE` | Stops strangers from triggering alerts or asking caregiver questions. Checked with a timing-safe compare. |
+| Upstash Redis (optional) | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Shares caregiver questions across two devices. |
+
+Only the data listed under "AI used at runtime" goes to Groq or Gemini. Video and camera frames are never sent anywhere.
+
+## AI used at runtime
+Cloud AI is used for one thing: suggesting sentences that start with the letters a patient has spelled. Blink detection, Morse decoding, speech and alerts do not use it.
+**Services.** The browser calls this app's own `POST /api/predict` (a Vercel function). That function asks **Groq** (default model `llama-3.1-8b-instant`) first and **Google Gemini** (default `gemini-2.0-flash`) only if Groq fails or returns nothing. The model names can be overridden with `GROQ_MODEL` and `GEMINI_MODEL`.
+**What they receive.** One text prompt built from: the letters typed so far (up to 60 characters), up to 5 recent sentences the patient chose (up to 120 characters each), the language (English, Hindi or Kannada), and how many sentences to return. Nothing else is in the request: no video, camera images, audio or alert passcode. The app has no name or profile field, but letters and recent sentences are sent as typed, so a spelled name would be sent. We make no claim about how Groq or Google store or use the text; see their own policies.
+**Labels.** Every suggestion tile says "AI" or "Built-in". The server marks AI sentences in its response, and the app never labels a sentence "AI" on its own.
+**Off switch.** Settings > "Use cloud AI for suggestions" (on by default). When off, the app sends no request to `/api/predict` and uses only built-in phrases. A unit test checks that no `fetch` happens.
+**If they are down.** Groq is tried, then Gemini (6 s limit for each). If neither answers, a provider is not configured, or nothing usable arrives within 9 s, the app keeps the built-in phrases, which are shown instantly before any cloud answer, and shows the note "Using built-in suggestions for now." Every suggestion, from either source, must start with the typed letters, and nothing is chosen without a blink.
+**Kiro.** Kiro was used to build this app. Kiro is not part of the running app. The specs, steering and hooks in `.kiro/` show how.
 
 ## How Kiro was used
 

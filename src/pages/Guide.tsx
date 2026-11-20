@@ -128,7 +128,7 @@ export function Guide({ go }: { go: (p: Page) => void }) {
       <Card>
         <h2 className="text-2xl font-bold">Privacy</h2>
         <p className="mt-2 text-lg text-muted">
-          Video is analysed inside your browser and is never uploaded or saved. Only the letters you spell are used to look up suggestions, and alerts contain just a short message.
+          Video is analysed inside your browser and is never uploaded or saved. For sentence suggestions, the letters you spell, up to 5 recent sentences and the language are sent to cloud AI (Groq, then Gemini). You can turn this off in Settings. Alerts contain just a short message.
         </p>
       </Card>
     </div>

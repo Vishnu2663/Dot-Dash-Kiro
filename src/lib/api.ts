@@ -1,4 +1,5 @@
 import { loadSettings } from "./settings";
+import { FALLBACK_MS, parseRemote, type Suggestion } from "./suggest";
 
 const post = async (url: string, body: unknown, headers: Record<string, string>, timeoutMs: number) =>
   fetch(url, {
@@ -8,18 +9,27 @@ const post = async (url: string, body: unknown, headers: Record<string, string>,
     signal: AbortSignal.timeout(timeoutMs),
   });
 
-/** Ask the server for sentences. Returns null on any failure so callers fall back to the local list. */
-export async function fetchSuggestions(letters: string, recent: string[], lang: string, n = 6) {
+/**
+ * Ask the server for sentences. Returns null on any failure so callers fall back to the built-in list.
+ * Makes no network request at all when "Use cloud AI for suggestions" is off.
+ */
+export async function fetchSuggestions(
+  letters: string, recent: string[], lang: string, n = 6, signal?: AbortSignal,
+): Promise<Suggestion[] | null> {
+  if (!loadSettings().cloudAi) return null;
   try {
-    const res = await post("/api/predict", { letters, recent, lang, n }, {}, 9000);
+    const res = await fetch("/api/predict", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ letters, recent, lang, n }),
+      signal: signal ?? AbortSignal.timeout(FALLBACK_MS),
+    });
     if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data.suggestions) ? (data.suggestions as string[]) : null;
+    return parseRemote(await res.json());
   } catch {
     return null;
   }
 }
-
 export type AlertResult = "sent" | "cooldown" | "unauthorized" | "not-configured" | "no-chat" | "rejected" | "failed";
 const ALERT_COOLDOWN_MS = 30_000;
 let lastSos = 0;
