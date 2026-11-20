@@ -1,0 +1,49 @@
+# Requirements: Provider health for /api/predict
+
+## Introduction
+Both default models are retired: Groq `llama-3.1-8b-instant` (shutdown 08/16/26) and Gemini
+`gemini-2.0-flash` (shutdown June 1, 2026). Every call now fails, the server swallows the error, and
+suggestions fall back to built-in phrases with no trace in the logs. This spec adds failure logging,
+moves the defaults to current models available on each provider's free tier, and documents how to
+diagnose it.
+
+Out of scope, and unchanged: blink timing, the caregiver channel, alerts, and all security rules.
+
+## Constraints
+- Only free AI services. The defaults shall be models offered on each provider's free tier.
+- The model choice shall come from the official deprecation pages (see design.md, Sources).
+
+## Glossary
+- **Provider call**: one attempt by `/api/predict` to get sentences from Groq or Gemini.
+- **Failure reason**: one of `missing-key`, `bad-status`, `timeout`, `network-error`, `unparseable-reply`.
+
+### Requirement 1: Failure log line
+**User story:** As the maintainer, I want one log line per failed provider call, so I can see why suggestions fell back.
+
+1. When a provider has no API key configured, the server shall log one line with the provider name, status `none` and reason `missing-key`.
+2. When a provider answers with a non-2xx HTTP status, the server shall log one line with the provider name, that status and reason `bad-status`.
+3. When a provider call exceeds its 6 s limit, the server shall log one line with the provider name, status `none` and reason `timeout`.
+4. When a provider call fails for another network reason, the server shall log one line with the provider name, status `none` and reason `network-error`.
+5. When a provider answers 2xx but no sentences can be read from the reply, the server shall log one line with the provider name, the status and reason `unparseable-reply`.
+6. The log line shall have a fixed format: `[predict] provider=<groq|gemini> status=<number|none> reason=<reason>`.
+7. The log line shall not contain an API key, the typed letters, recent sentences, the prompt, or any part of the provider's reply body.
+8. When a provider call succeeds, the server shall not log anything for that call.
+9. The response to the browser shall not change: still HTTP 200 with `{ suggestions: [] }` when every provider fails.
+
+### Requirement 2: Current default models
+**User story:** As the maintainer, I want defaults that work today on free tiers, so suggestions work without extra setup.
+
+1. The default Groq model shall be one listed as a production model and not deprecated on Groq's official pages, and available on Groq's free plan.
+2. The default Gemini model shall be one with no shutdown date announced on Google's official deprecation page, and "Free of charge" on the free tier.
+3. `GROQ_MODEL` and `GEMINI_MODEL` shall still override the defaults.
+4. While the default model is a reasoning model, the request shall limit reasoning so the answer fits within the output limit.
+
+### Requirement 3: README
+1. The README shall name both default models.
+2. The README shall say they can be replaced with `GROQ_MODEL` and `GEMINI_MODEL`.
+3. The README shall say that model retirement is the first thing to check when suggestions only show "Built-in", and how to read the log line.
+
+### Requirement 4: Tests
+1. Tests shall cover each failure reason and check the exact log line.
+2. Tests shall check that no log line, across all failure types, contains the API key or any input text.
+3. Tests shall check that a successful call logs nothing.

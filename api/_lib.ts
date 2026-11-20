@@ -99,3 +99,30 @@ export function parseSuggestions(content: string, n: number): string[] {
     return [];
   }
 }
+
+export type Provider = "groq" | "gemini";
+export type FailureReason = "missing-key" | "bad-status" | "timeout" | "network-error" | "unparseable-reply";
+
+/** A failed provider call. Carries only a closed reason and an HTTP status, never free text. */
+export class ProviderError extends Error {
+  constructor(readonly reason: FailureReason, readonly status: number | null = null) {
+    super(reason);
+  }
+}
+
+/**
+ * The one log line for a failed provider call. Inputs are two closed enums and a number,
+ * so keys, typed letters, sentences, prompts and reply bodies cannot end up in the logs.
+ */
+export function providerFailureLine(provider: Provider, reason: FailureReason, status: number | null): string {
+  const s = typeof status === "number" && Number.isInteger(status) ? String(status) : "none";
+  return `[predict] provider=${provider} status=${s} reason=${reason}`;
+}
+
+/** Turns anything a provider call threw into a ProviderError. */
+export function toProviderError(e: unknown): ProviderError {
+  if (e instanceof ProviderError) return e;
+  const name = (e as { name?: unknown } | null)?.name;
+  if (name === "TimeoutError" || name === "AbortError") return new ProviderError("timeout");
+  return new ProviderError("network-error");
+}

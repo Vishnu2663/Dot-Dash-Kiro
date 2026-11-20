@@ -1,9 +1,24 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { bodyOf, parseSuggestions, str } from "./_lib.js";
+import { bodyOf, parseSuggestions, providerFailureLine, ProviderError, str, toProviderError, type Provider } from "./_lib.js";
 
 const LANGUAGES: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada" };
 
-async function askGroq(prompt: string, key: string): Promise<string> {
+/** One provider reply: the text the model produced and the HTTP status it came with. */
+interface Reply {
+  text: string;
+  status: number;
+}
+
+/** Reads a 2xx JSON body. A body that is not JSON counts as an unparseable reply. */
+async function readJson<T>(r: Response): Promise<T> {
+  try {
+    return (await r.json()) as T;
+  } catch {
+    throw new ProviderError("unparseable-reply", r.status);
+  }
+}
+
+async function askGroq(prompt: string, key: string): Promise<Reply> {
   const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { "content-type": "application/json", Authorization: `Bearer ${key}` },
@@ -15,12 +30,12 @@ async function askGroq(prompt: string, key: string): Promise<string> {
     }),
     signal: AbortSignal.timeout(6000),
   });
-  if (!r.ok) throw new Error(`groq ${r.status}`);
-  const data = (await r.json()) as { choices?: { message?: { content?: string } }[] };
-  return data.choices?.[0]?.message?.content ?? "";
+  if (!r.ok) throw new ProviderError("bad-status", r.status);
+  const data = await readJson<{ choices?: { message?: { content?: string } }[] }>(r);
+  return { text: data.choices?.[0]?.message?.content ?? "", status: r.status };
 }
 
-async function askGemini(prompt: string, key: string): Promise<string> {
+async function askGemini(prompt: string, key: string): Promise<Reply> {
   const model = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
@@ -31,14 +46,15 @@ async function askGemini(prompt: string, key: string): Promise<string> {
     }),
     signal: AbortSignal.timeout(6000),
   });
-  if (!r.ok) throw new Error(`gemini ${r.status}`);
-  const data = (await r.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+  if (!r.ok) throw new ProviderError("bad-status", r.status);
+  const data = await readJson<{ candidates?: { content?: { parts?: { text?: string }[] } }[] }>(r);
+  return { text: data.candidates?.[0]?.content?.parts?.[0]?.text ?? "", status: r.status };
 }
 
 /**
- * Suggests short sentences a patient might want to say. Tries Groq first (fast), then Gemini.
+ * Suggests short sentences a patient might want to say. Tries Groq first, then Gemini.
  * With no keys, or if both fail, returns an empty list and the app uses its built-in phrase bank.
+ * Each failed provider call writes one log line (see providerFailureLine).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -61,19 +77,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     (recent.length ? `Sentences they said recently: ${recent.join(" | ")}. ` : "") +
     `Reply with only a JSON array of strings.`;
 
-  const providers: [string | undefined, (p: string, k: string) => Promise<string>, "groq" | "gemini"][] = [
-    [process.env.GROQ_API_KEY, askGroq, "groq"],
-    [process.env.GEMINI_API_KEY, askGemini, "gemini"],
+  const providers: [Provider, string | undefined, (p: string, k: string) => Promise<Reply>][] = [
+    ["groq", process.env.GROQ_API_KEY, askGroq],
+    ["gemini", process.env.GEMINI_API_KEY, askGemini],
   ];
-  for (const [key, ask, provider] of providers) {
-    if (!key) continue;
+  for (const [provider, key, ask] of providers) {
+    let texts: string[];
     try {
-      const texts = parseSuggestions(await ask(prompt, key), n);
-      // Every sentence says where it came from, so the app can label it.
-      if (texts.length) return res.status(200).json({ suggestions: texts.map((text) => ({ text, source: "ai", provider })) });
-    } catch {
-      /* try the next provider */
+      if (!key) throw new ProviderError("missing-key");
+      const reply = await ask(prompt, key);
+      texts = parseSuggestions(reply.text, n);
+      if (!texts.length) throw new ProviderError("unparseable-reply", reply.status);
+    } catch (e) {
+      // One line per failure. Only the provider, a closed reason and the status are logged.
+      const err = toProviderError(e);
+      console.warn(providerFailureLine(provider, err.reason, err.status));
+      continue;
     }
+    // Every sentence says where it came from, so the app can label it.
+    return res.status(200).json({ suggestions: texts.map((text) => ({ text, source: "ai", provider })) });
   }
   return res.status(200).json({ suggestions: [] });
 }
