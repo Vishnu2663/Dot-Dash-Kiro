@@ -80,3 +80,25 @@ describe("/api/predict source labels and provider order", () => {
     expect(prompt).not.toContain("Ravi");
   });
 });
+
+import { fixLetterCase } from "../api/_lib.js";
+
+describe("fixLetterCase", () => {
+  it("fixes capitals copied from the typed letters (replies seen from the live model)", () => {
+    expect(fixLetterCase("PLease help me get a drink.", "PL")).toBe("Please help me get a drink.");
+    expect(fixLetterCase("PLenty of pain is all I feel today.", "PL")).toBe("Plenty of pain is all I feel today.");
+    expect(fixLetterCase("PLs I need more water.", "PL")).toBe("Pls I need more water.");
+  });
+  it("covers every typed word, with or without spaces", () => {
+    expect(fixLetterCase("I WAnt to sleep.", "I WA")).toBe("I want to sleep.");
+    expect(fixLetterCase("I WAnt to sleep.", "IWA")).toBe("I want to sleep.");
+    expect(fixLetterCase("PLease CAll the nurse.", "PL CA")).toBe("Please call the nurse.");
+  });
+  it("leaves correct text, all-capital words and words after the typed letters alone", () => {
+    expect(fixLetterCase("PLease call DR SMith later.", "PL")).toBe("Please call DR SMith later.");
+    expect(fixLetterCase("Please call the nurse.", "PL")).toBe("Please call the nurse.");
+    expect(fixLetterCase("I am in the ICU.", "IA")).toBe("I am in the ICU.");
+    expect(fixLetterCase("Please turn on the TVs now.", "PL")).toBe("Please turn on the TVs now.");
+    expect(fixLetterCase("Pain in my arm.", "P")).toBe("Pain in my arm.");
+  });
+});

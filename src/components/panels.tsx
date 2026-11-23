@@ -62,7 +62,7 @@ export function EyeMeter({ score, threshold }: { score: number; threshold: numbe
       <div className="relative h-4 overflow-hidden rounded-pill border border-line-strong bg-surface-2">
         <div
           className={`motion-progress absolute inset-0 rounded-pill ${closed ? "bg-danger" : "bg-ok"}`}
-          style={{ transform: `scaleX(${value})`, transition: "transform var(--duration-gauge) linear" }}
+          style={{ transform: `scaleX(${value})` }}
         />
         <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-inverse ring-1 ring-on-inverse" style={{ left: `${threshold * 100}%` }} title="Closed-eye threshold" />
       </div>
@@ -108,7 +108,6 @@ export function BlinkGauge({ closedFor, timing }: { closedFor: number; timing: T
     { from: timing.dashMax, to: GAUGE_MAX_S, cls: "bg-danger-tint", name: "sos" },
   ];
   const textColor = zone === "sos" ? "text-danger" : zone === "dot" || zone === "dash" ? "text-accent" : "text-muted";
-  const progress = { transition: "transform var(--duration-gauge) linear" };
 
   return (
     <div>
@@ -143,7 +142,7 @@ export function BlinkGauge({ closedFor, timing }: { closedFor: number; timing: T
         </div>
         <div
           className={`motion-progress absolute inset-0 ${zone === "sos" ? "bg-danger" : "bg-accent"}`}
-          style={{ ...progress, transform: `scaleX(${fill})` }}
+          style={{ transform: `scaleX(${fill})` }}
         />
         {/* Boundary ticks drawn above the fill. White with a near-black ring: 3:1 or more on the
             dark track and on the blue or red fill alike. */}
@@ -155,7 +154,7 @@ export function BlinkGauge({ closedFor, timing }: { closedFor: number; timing: T
           />
         ))}
         {/* Edge marker: a full-width layer moved with translateX, so only transform changes */}
-        <div className="motion-progress absolute inset-0" style={{ ...progress, transform: `translateX(${fill * 100}%)` }}>
+        <div className="motion-progress absolute inset-0" style={{ transform: `translateX(${fill * 100}%)` }}>
           {closedFor > 0 && <div className="absolute inset-y-0 left-0 w-1.5 -translate-x-1/2 rounded-pill bg-inverse ring-1 ring-on-inverse" />}
         </div>
       </div>

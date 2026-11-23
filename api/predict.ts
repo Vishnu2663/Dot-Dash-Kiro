@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { bodyOf, parseSuggestions, providerFailureLine, ProviderError, str, toProviderError, type Provider } from "./_lib.js";
+import { bodyOf, fixLetterCase, parseSuggestions, providerFailureLine, ProviderError, str, toProviderError, type Provider } from "./_lib.js";
 
 const LANGUAGES: Record<string, string> = { en: "English", hi: "Hindi", kn: "Kannada" };
 
@@ -93,6 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `A patient who cannot speak is spelling a message letter by letter. They have typed: "${letters}".\n` +
     `Give up to ${n} short, natural sentences in ${lang} that a bedridden patient might want to say. ` +
     `Every sentence MUST begin with exactly those letters (ignore case). ` +
+    `Write normal sentence case (for example "Please...", never "PLease..."), with full words and no abbreviations or text-speak. ` +
     (recent.length ? `Sentences they said recently: ${recent.join(" | ")}. ` : "") +
     `Reply with only a JSON array of strings.`;
 
@@ -105,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try {
       if (!key) throw new ProviderError("missing-key");
       const reply = await ask(prompt, key);
-      texts = parseSuggestions(reply.text, n);
+      texts = parseSuggestions(reply.text, n).map((t) => fixLetterCase(t, letters));
       if (!texts.length) throw new ProviderError("unparseable-reply", reply.status);
     } catch (e) {
       // One line per failure. Only the provider, a closed reason and the status are logged.

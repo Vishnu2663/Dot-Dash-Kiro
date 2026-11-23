@@ -126,3 +126,27 @@ export function toProviderError(e: unknown): ProviderError {
   if (name === "TimeoutError" || name === "AbortError") return new ProviderError("timeout");
   return new ProviderError("network-error");
 }
+
+/**
+ * Undoes capitals a model copied from the typed letters. The app sends letters in upper case
+ * ("PL"), and models often echo them ("PLease", "PLs"). Only the words that cover the typed
+ * letters are touched, and only the mixed "PLease" shape: all-capital words such as "I" or "ICU"
+ * stay as they are. The first word keeps its capital; later words become lower case ("I WAnt" ->
+ * "I want").
+ */
+export function fixLetterCase(sentence: string, letters: string): string {
+  const typedWords = letters.trim().split(/\s+/).filter(Boolean);
+  // Typed with spaces: one sentence word per typed word. Without spaces, letters run across words.
+  let wordsLeft = typedWords.length > 1 ? typedWords.length : Infinity;
+  let lettersLeft = typedWords.length > 1 ? Infinity : letters.replace(/\s+/g, "").length;
+  let index = 0;
+  return sentence.replace(/\S+/g, (word) => {
+    const first = index++ === 0;
+    if (wordsLeft <= 0 || lettersLeft <= 0) return word;
+    wordsLeft -= 1;
+    lettersLeft -= word.replace(/[^\p{L}\p{N}]/gu, "").length;
+    return word.replace(/^(\p{Lu})(\p{Lu}+)(?=\p{Ll})/u, (_, head: string, caps: string) =>
+      (first ? head : head.toLowerCase()) + caps.toLowerCase(),
+    );
+  });
+}

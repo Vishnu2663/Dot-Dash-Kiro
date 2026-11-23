@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 /*
+ * Tailwind generates a class for every class-like name it finds in the project. Specs, docs and
+ * tests name forbidden classes (to forbid them), so they are not scanned. Only app code is.
+ */
+@source not "../tests";
+@source not "../.kiro";
+@source not "../README.md";
+
+/*
  * Design tokens. This block is the only place colours, type sizes, spacing, radii, shadows and motion
  * timings are defined. Components use these tokens only (checked by tests/ui-tokens.test.ts).
  * Every colour is a six-digit hex so contrast can be computed. Documented in .kiro/steering/structure.md.
@@ -128,7 +136,12 @@
  * Progress indicators (blink gauge, eye meter, Easy mode scan bar, calibration bar) carry the
  * motion-progress class. They keep moving under reduced motion, so the patient can still see timing.
  */
-.motion-progress { transform-origin: left center; will-change: transform; }
+.motion-progress {
+  transform-origin: left center;
+  will-change: transform;
+  transition: transform var(--duration-gauge) linear; /* follows the camera frame rate closely */
+}
+.motion-progress-slow { transition-duration: var(--duration-slow); } /* once-per-tick timers */
 
 /* Reduced motion: the OS setting, or the "Reduce motion" setting in the app. Same rule, written twice. */
 @media (prefers-reduced-motion: reduce) {

@@ -202,8 +202,8 @@ export function Calibrate({ settings, onSaved, go }: { settings: Settings; onSav
                 <p className="text-4xl font-bold leading-tight" aria-live="polite">{ready || !isBlinkStep ? current.text : "Get ready…"}</p>
                 <div className="h-3 overflow-hidden rounded-pill bg-surface-2" aria-hidden="true">
                   <div
-                    className="motion-progress h-full rounded-pill bg-inverse"
-                    style={{ transform: `scaleX(${Math.min(1, Math.max(0, 1 - secondsLeft / current.limit))})`, transition: "transform var(--duration-slow) linear" }}
+                    className="motion-progress motion-progress-slow h-full rounded-pill bg-inverse"
+                    style={{ transform: `scaleX(${Math.min(1, Math.max(0, 1 - secondsLeft / current.limit))})` }}
                   />
                 </div>
                 <p className="text-2xl font-semibold text-muted">

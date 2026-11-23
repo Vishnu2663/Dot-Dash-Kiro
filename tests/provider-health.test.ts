@@ -202,3 +202,32 @@ describe("default models and request bodies", () => {
     ]);
   });
 });
+
+describe("suggestion text from the provider", () => {
+  const fetchMock = vi.fn();
+  beforeEach(() => {
+    fetchMock.mockReset();
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("GROQ_API_KEY", GROQ_KEY);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it("asks for sentence case and fixes copied capitals in the reply", async () => {
+    fetchMock.mockResolvedValueOnce(groqOk(["PLease help me get a drink.", "PLenty of pain today."]));
+    const r = await call({ letters: "PL", lang: "en", n: 6 });
+    const prompt: string = JSON.parse(fetchMock.mock.calls[0][1].body).messages[0].content;
+    expect(prompt).toContain("normal sentence case");
+    expect(prompt).toContain("no abbreviations");
+    expect(r.out).toEqual({
+      suggestions: [
+        { text: "Please help me get a drink.", source: "ai", provider: "groq" },
+        { text: "Plenty of pain today.", source: "ai", provider: "groq" },
+      ],
+    });
+  });
+});
