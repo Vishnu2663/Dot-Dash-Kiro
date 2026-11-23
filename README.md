@@ -15,7 +15,7 @@
 | **Easy mode** | A highlight scans Water, Pain, Toilet, Turn me, Call nurse, Yes, No. One blink picks the highlighted option. |
 | **Emergency alert** | Eyes closed 3 s, or spelling `HELP`, sends a Telegram alert. One alert per 30 s, enforced on client and server. |
 | **Caregiver questions** | A caregiver asks a yes/no question from another device. The patient answers with one short (yes) or long (no) blink. |
-| **Settings** | Sensitivity, scan speed, language (English, Hindi, Kannada), sound cues, passcode, reset. |
+| **Settings** | Sensitivity, scan speed, language (English, Hindi, Kannada), sound cues, "Use cloud AI for suggestions", "Reduce motion", passcode, reset. |
 
 ## Architecture
 
@@ -27,7 +27,8 @@ Webcam -> MediaPipe Face Landmarker (eyeBlinkLeft/Right) -> BlinkDetector -> Mor
 
 - Frontend: Vite, React 19, TypeScript (strict), Tailwind CSS v4.
 - Eye tracking runs fully client-side. The MediaPipe WASM runtime is served from this app; only the model file is fetched from Google Cloud Storage.
-- Pure logic (`src/lib/blink.ts`, `morse.ts`, `phrases.ts`) has unit tests.
+- Pure logic (`src/lib/blink.ts`, `morse.ts`, `phrases.ts`, `suggest.ts`, `settings.ts`) and the `api/` functions have unit tests.
+- Design tokens live in one place (`src/index.css`). `tests/ui-tokens.test.ts` fails if any colour pair drops below WCAG AA contrast, if a component uses a colour outside the tokens, or if an animation breaks the motion rules (under 400 ms, `transform` and `opacity` only, progress indicators kept under reduced motion).
 - Serverless API in `api/`: passcode checked with a timing-safe compare, inputs validated and length-limited, secrets only in environment variables.
 
 ## Run it
@@ -90,9 +91,13 @@ The line never contains keys, typed letters, sentences or the provider's reply.
 
 Everything in this repo was built in Kiro. The `.kiro/` directory is committed so the process can be inspected.
 
-- **Spec-driven development** (`.kiro/specs/dot-dash/`): `requirements.md` (user stories with EARS-style acceptance criteria for blink timing, calibration, Morse, Easy mode, alerts, caregiver questions), `design.md` (data flow, modules, API, security) and `tasks.md` (the implementation plan that was followed in order).
+- **Spec-driven development** (`.kiro/specs/`): each spec has `requirements.md` (user stories with EARS-style acceptance criteria), `design.md` and `tasks.md` (the implementation plan, followed in order).
+  - `dot-dash/`: the whole app: blink timing, calibration, Morse, Easy mode, alerts, caregiver questions.
+  - `ai-transparency/`: what leaves the device, "AI" and "Built-in" labels, the cloud AI switch, the 9 s fallback.
+  - `provider-health/`: a log line per failed AI call, current default models, readable suggestion casing.
+  - `ui-refresh/`: design tokens, restrained motion, reduced motion, responsive layout, plus a manual browser checklist.
 - **Steering docs** (`.kiro/steering/`): `product.md` (privacy, safety and accessibility principles), `tech.md` (stack and conventions, secrets handling), `structure.md` (where code lives). They kept generated code consistent across sessions, for example logic stays free of React so it can be tested.
-- **Agent hooks** (`.kiro/hooks/`): one runs the unit tests when blink, Morse or phrase logic is saved, so timing rules cannot regress. The other checks edited source files for hard-coded secrets.
+- **Agent hooks** (`.kiro/hooks/`): one asks the agent to run the unit tests when blink, Morse or phrase logic is saved, to catch regressions in the timing rules. The other asks the agent to check edited source files for hard-coded secrets.
 - **Vibe coding**: used for the UI pages and for iterating on the calibration and blink-timing behaviour.
 
 ## Privacy and safety

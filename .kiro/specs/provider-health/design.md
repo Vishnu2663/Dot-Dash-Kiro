@@ -34,6 +34,13 @@ be logged. Error bodies from providers are never read into the log.
 - Privacy text: one sentence from Google's pricing page about the free tier, attributed. No other
   provider-side claim.
 
+## Suggestion casing
+`fixLetterCase(sentence, letters)` in `api/_lib.ts` runs on every parsed sentence before it is returned.
+It walks the words that cover the typed letters (one word per typed word when the letters contain spaces;
+otherwise word by word until the letter count is used up). It only rewrites the `^Lu Lu+ (?=Ll)` shape,
+keeping the first word's capital and lowering later words. The client's `startsWithLetters` match is
+case-insensitive, so filtering is unaffected.
+
 ## Sources
 - https://console.groq.com/docs/deprecations
 - https://console.groq.com/docs/models

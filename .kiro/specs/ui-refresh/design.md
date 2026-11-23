@@ -10,13 +10,16 @@
 | Focus | `focus` | Used by the global `:focus-visible` outline |
 | Type | `--text-xs` … `--text-6xl` | Same values as before, now pinned, so nothing shrinks |
 | Spacing | `--spacing: 0.25rem` | Allowed steps: 1, 1.5, 2, 3, 4, 5, 6, 8, 10, 12 |
-| Radius | `control`, `tile`, `card`, `pill` | |
+| Radius | `chip`, `control`, `tile`, `card`, `pill` | |
 | Shadow | `card`, `raised` | |
 | Motion | `--duration-gauge` 90 ms, `--duration-fast` 150 ms, `--duration-base` 220 ms, `--duration-slow` 320 ms, `--stagger-step` 30 ms, `--ease-standard` | All under 400 ms |
 
 ## Motion classes
 `.anim-enter` (fade + 6 px rise), `.anim-symbol` (scale-in), `.anim-slide-in` (banner), `.anim-tile` (staggered
-by `--i`), `.motion-progress` (exempt from reduced motion). Keyframes use `transform` and `opacity` only.
+by `--i`), `.motion-progress` (exempt from reduced motion; carries the transform transition, with
+`.motion-progress-slow` for the calibration timer). Keyframes use `transform` and `opacity` only.
+Progress transitions live in CSS, not inline styles, and Tailwind does not scan `tests/`, `.kiro/` or
+`README.md`, so no unused utility classes (such as `.transition` or `.backdrop-blur`) reach the build.
 
 ## Reduced motion
 One rule, written twice: once under `@media (prefers-reduced-motion: reduce)` and once under
@@ -39,7 +42,7 @@ One rule, written twice: once under `@media (prefers-reduced-motion: reduce)` an
 
 ## Layout
 - **Order:** the DOM order is tracker, then main column, then chart, at every size. The grid only changes columns, never order.
-  - Morse at `xl`: `[21rem 1fr 17rem]`.
+  - Morse at `xl`: `[20rem minmax(0,1fr) 17rem]`.
   - Morse at `lg`: tracker and main side by side, chart full width below.
 - **Navigation:** a 3-column grid on phones, a single row from `sm`.
 - **Overflow:** long words wrap (`min-w-0`, `break-words`).

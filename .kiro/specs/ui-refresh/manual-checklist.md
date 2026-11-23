@@ -2,9 +2,10 @@
 
 Nobody has looked at this redesign in a browser yet. These checks cover what the automated tests can't see.
 
-**Setup.** Run `npm run dev` and open http://localhost:5173 in Chrome (the camera works on localhost). For
-the "before" comparison, use the deployed site https://dot-dash-kiro.vercel.app, which still runs the
-pre-refresh UI. Tick each box, or note what you saw.
+**Setup.** Open https://dot-dash-kiro.vercel.app (or run `npm run dev` and open http://localhost:5173) in
+Chrome. The live site now runs this redesign. For the "before" comparison, open the pre-refresh build: in
+Vercel, go to the project → **Deployments** → the deployment for commit `636e21b` → **Visit**. Tick each box,
+or note what you saw.
 
 ## 1. Widths and horizontal scrolling (Req 6)
 In DevTools, open the device toolbar and test **360**, **768**, **1024**, **1280** and **1920** px wide, on every page:
@@ -20,7 +21,7 @@ Home, Morse, Easy mode, Caregiver, Guide, Settings and Calibrate.
 - [ ] Morse at 1280 px and up: three columns, from left to right camera/gauge, message, chart.
 
 ## 2. Contrast and size (Req 2)
-- [ ] Nothing on the Morse, Easy and question-banner screens looks smaller than on the deployed site. Compare side by side at the same width.
+- [ ] Nothing on the Morse, Easy and question-banner screens looks smaller than on the pre-refresh build. Compare side by side at the same width.
 - [ ] Letters in the Morse chart that the current code can no longer become are grey but easy to read, not faded.
 - [ ] In the browser zoom menu, set 200%: text reflows and nothing overlaps or gets cut off.
 - [ ] Optional: run DevTools Lighthouse, Accessibility. Note any contrast failures.
@@ -68,9 +69,9 @@ Home, Morse, Easy mode, Caregiver, Guide, Settings and Calibrate.
 - [ ] "Skip to content" appears on the first Tab and jumps to the page.
 
 ## 6. Performance (Req 8)
-- [ ] **Smoothness:** in DevTools, open More tools → Rendering and tick **Frame Rendering Stats**. On Morse, blink normally for 30 s; the frame rate stays steady. Compare it with the deployed site.
+- [ ] **Smoothness:** in DevTools, open More tools → Rendering and tick **Frame Rendering Stats**. On Morse, blink normally for 30 s; the frame rate stays steady. Compare it with the pre-refresh build.
 - [ ] **No long tasks:** DevTools → Performance → Record for about 10 s while blinking. Main-thread tasks should stay short, with no red triangles appearing during animations.
-- [ ] **Detection unchanged:** blink detection feels the same as on the deployed site. Run Calibrate and use Morse; dots and dashes register as before.
+- [ ] **Detection unchanged:** blink detection feels the same as on the pre-refresh build. Run Calibrate and use Morse; dots and dashes register as before.
 
 ## 7. Screen reader spot check (optional)
 - [ ] macOS VoiceOver (Cmd+F5) on Morse: the gauge is read as "Blink length" with its zone text.

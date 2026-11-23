@@ -5,18 +5,23 @@ inclusion: always
 
 - `src/lib/` pure logic: `blink.ts` (detector + calibration fit), `morse.ts`, `phrases.ts`,
   `settings.ts`, `api.ts`, `audio.ts`, `speech.ts`, `tracker.tsx` (camera + MediaPipe provider),
-  `suggest.ts` (suggestion source labels, merge and 9 s cloud-AI fallback).
-- `src/components/` shared UI (cards, buttons, camera panel, eye meter, blink bar, Morse chart).
+  `suggest.ts` (suggestion source labels, merge and 9 s cloud-AI fallback), `motion.ts`
+  (reduced-motion check and the `data-reduce-motion` switch).
+- `src/components/` shared UI (cards, buttons, camera panel, eye meter, blink gauge, Morse chart).
 - `src/pages/` one file per route: Home, Morse, Easy, Calibrate, Settings, Caregiver, Guide.
 - `api/` serverless functions and `api/_lib.ts` shared helpers.
 - `.kiro/specs/dot-dash/` requirements, design and tasks for the whole app.
 - `.kiro/specs/ai-transparency/` what leaves the device, suggestion source labels, cloud AI switch.
-- `tests/` tests for the `api/` functions (kept out of `api/` so they are not deployed).
+- `.kiro/specs/provider-health/` failure log lines for `/api/predict`, current default models, suggestion casing.
+- `tests/` tests for the `api/` functions (kept out of `api/` so they are not deployed), and
+  `ui-tokens.test.ts` (contrast, token-only, motion and layout rules). Unit tests for `src/lib`
+  sit next to the code (`*.test.ts`).
 - `.kiro/hooks/` automation run during development.
 - `.kiro/specs/ui-refresh/` design system, motion rules, reduced motion, layout, manual checklist.
 
 ## Design tokens (`src/index.css`, `@theme`)
-Defined once there; components use only these (enforced by `tests/ui-tokens.test.ts`).
+Defined once there; components use only these (enforced by `tests/ui-tokens.test.ts`). Tailwind
+scans app code only: `tests/`, `.kiro/` and `README.md` are excluded with `@source not`.
 - **Colour** (six-digit hex):
   - Neutrals: `bg`, `surface`, `surface-2`, `surface-3`, `line` (decorative dividers), `line-strong` (interactive borders), `text`, `muted`.
   - Inverse: `inverse`, `on-inverse`, `on-inverse-muted`.
@@ -29,5 +34,7 @@ Defined once there; components use only these (enforced by `tests/ui-tokens.test
 - **Shadow:** `shadow-card`, `shadow-raised`.
 - **Motion** (`:root`): `--duration-gauge` 90 ms, `--duration-fast` 150 ms, `--duration-base` 220 ms, `--duration-slow` 320 ms, `--stagger-step` 30 ms, `--ease-standard`.
 - **Motion classes:** `anim-enter`, `anim-symbol`, `anim-slide-in`, `anim-toast`, `anim-tile` (stagger by `--i`). Animate `transform` and `opacity` only.
-- **Progress indicators** carry `motion-progress` and keep moving under reduced motion: the blink gauge, eye meter, scan bar and calibration bar.
+- **Progress indicators** carry `motion-progress` (transform transition at `--duration-gauge`; add
+  `motion-progress-slow` for `--duration-slow`) and keep moving under reduced motion: the blink gauge,
+  eye meter, scan bar and calibration bar.
 - **Reduced motion:** `prefers-reduced-motion`, or `data-reduce-motion` on `<html>` (the Settings toggle).

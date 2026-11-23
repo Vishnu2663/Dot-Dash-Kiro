@@ -5,3 +5,4 @@
 - [x] 3. Default models `openai/gpt-oss-20b` and `gemini-3.6-flash`; Groq reasoning settings for GPT-OSS; 1024 output tokens for both; no Gemini thinking field. Tests check both request bodies, overrides, and that a refused model logs its status. _Req 2_
 - [x] 4. README and Settings panel: model defaults, `GROQ_MODEL` / `GEMINI_MODEL`, unset `GEMINI_API_KEY` turns Gemini off, "check model retirement first", how to read the log line, attributed Google free-tier sentence. _Req 3_
 - [x] 5. `npm run typecheck` and `npm test` pass. Do not push.
+- [x] 6. `fixLetterCase` in `api/_lib.ts`, applied to every provider sentence; prompt asks for sentence case and no abbreviations. Tests: the live replies, spaced and unspaced letters, words left alone, handler output. _Req 5_

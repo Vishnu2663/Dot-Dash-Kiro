@@ -52,3 +52,12 @@ Out of scope, and unchanged: blink timing, the caregiver channel, alerts, and al
 1. Tests shall cover each failure reason and check the exact log line.
 2. Tests shall check that no log line, across all failure types, contains the API key or any input text.
 3. Tests shall check that a successful call logs nothing.
+
+### Requirement 5: Readable suggestion text
+**User story:** As a patient, I want suggestions written like normal sentences, so they are easy to read and sound right when spoken.
+
+Found after the first live call: the model copied the typed capitals ("PLease help me get a drink.", "PLs I need more water.").
+1. The prompt shall ask for normal sentence case, full words, and no abbreviations or text-speak.
+2. When a sentence word covering the typed letters has the copied-capitals shape ("PLease"), the server shall rewrite it to sentence case ("Please"; later words become lower case: "I WAnt" becomes "I want").
+3. The server shall leave all-capital words ("I", "ICU"), already-correct words, and words after the typed letters unchanged.
+
